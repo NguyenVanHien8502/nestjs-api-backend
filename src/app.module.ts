@@ -1,9 +1,12 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common'
-import { AuthModule } from './auth/auth.module'
+import { MongooseModule } from '@nestjs/mongoose'
 import { UserModule } from './user/user.module'
-import { NoteModule } from './note/note.module'
 
 @Module({
-  imports: [AuthModule, UserModule, NoteModule],
+  imports: [
+    UserModule,
+    MongooseModule.forRoot(process.env.MONGO_URL),
+  ],
 })
 export class AppModule {}
