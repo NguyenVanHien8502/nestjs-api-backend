@@ -1,12 +1,17 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { User } from './user.model'
+import { JwtService } from '@nestjs/jwt'
+
 @Injectable()
 export class UserService {
   private users: User[] = []
-  constructor(@InjectModel('User') private readonly userModel: Model<User>) {}
+  constructor(
+    private jwtService: JwtService,
+    @InjectModel('User') private readonly userModel: Model<User>,
+  ) {}
   async register(
     username: string,
     email: string,
@@ -36,6 +41,26 @@ export class UserService {
       msg: 'Register Successfully',
       status: true,
       newUser: newUser,
+    }
+  }
+
+  async loginUser(email: string, password: string): Promise<any> {
+    const user: User = await this.userModel.findOne({ email: email })
+    if (!user || !(await user.isMatchedPassword(password))) {
+      throw new UnauthorizedException()
+    }
+    
+    const payload = { sub: user._id, email: user.email }
+    return {
+      msg: 'Login Successfully',
+      status: true,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        age:user.age,
+        token: await this.jwtService.signAsync(payload),
+      },
     }
   }
 

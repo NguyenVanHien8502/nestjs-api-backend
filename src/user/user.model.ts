@@ -23,20 +23,23 @@ export const userSchema = new mongoose.Schema({
 })
 
 userSchema.pre('save', async function (next) {
-  if (!this.isModified("password")) {
+  if (!this.isModified('password')) {
     next()
   }
   const salt = await bcrypt.genSaltSync(10)
   this.password = await bcrypt.hash(this.password, salt)
 })
 
-userSchema.methods.isMatchedPassword = async function (enterPassword) {
+userSchema.methods.isMatchedPassword = async function (enterPassword: string) {
   return await bcrypt.compare(enterPassword, this.password)
 }
 
-export interface User {
+export interface User extends Document {
+  [x: string]: any
+  // id: string
   username: string
   email: string
   password: string
-  age: number
+  age?: number
+  isMatchedPassword(enteredPassword: string): Promise<boolean>
 }

@@ -5,12 +5,17 @@ import {
   Delete,
   Get,
   Header,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
+  Request,
+  UseGuards,
 } from '@nestjs/common'
 import * as dotenv from 'dotenv'
 import { UserService } from './user.service'
+import { UserGuard } from './user.guard'
 
 dotenv.config()
 
@@ -20,7 +25,7 @@ dotenv.config()
 // })
 // @Controller({ host: ':abc' })
 
-@Controller('api/user') //domain: http://localhost:3000/auth
+@Controller('api/user') //domain: http://localhost:3000/api/user
 export class UserController {
   constructor(private userService: UserService) {}
   //some requests from clients
@@ -39,6 +44,18 @@ export class UserController {
       age,
     )
     return result
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  loginUser(@Body('email') email: string, @Body('password') password: string) {
+    return this.userService.loginUser(email, password)
+  }
+
+  @UseGuards(UserGuard)
+  @Get('profile')
+  getProfile(@Request() req) {
+    return req.user
   }
 
   @Get()
@@ -61,15 +78,9 @@ export class UserController {
   async updateUser(
     @Param() params: any,
     @Body('username') username: string,
-    @Body('email') email: string,
-    @Body('password') password: string,
     @Body('age') age: number,
   ) {
-    const result = await this.userService.updateUser(
-      params.id,
-      username,
-      age,
-    )
+    const result = await this.userService.updateUser(params.id, username, age)
     return result
   }
 
