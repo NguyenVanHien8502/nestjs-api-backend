@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { User } from './user.model'
 import { JwtService } from '@nestjs/jwt'
+import { RegisterUserDto } from './dto/register-user.dto'
 
 @Injectable()
 export class UserService {
@@ -12,12 +13,8 @@ export class UserService {
     private jwtService: JwtService,
     @InjectModel('User') private readonly userModel: Model<User>,
   ) {}
-  async register(
-    username: string,
-    email: string,
-    password: string,
-    age: number,
-  ) {
+  async register(registerUserDto: RegisterUserDto) {
+    const { email } = registerUserDto
     // const newUser = new this.userModel({
     //   username: username,
     //   email: email,
@@ -31,12 +28,7 @@ export class UserService {
         msg: 'This email already exists',
         status: false,
       }
-    const newUser = await this.userModel.create({
-      username,
-      email,
-      password,
-      age,
-    })
+    const newUser = await this.userModel.create(registerUserDto)
     return {
       msg: 'Register Successfully',
       status: true,
@@ -44,13 +36,19 @@ export class UserService {
     }
   }
 
-  async loginUser(email: string, password: string): Promise<any> {
+  async loginUser(registerUserDto: RegisterUserDto): Promise<any> {
+    const { email, password } = registerUserDto
     const user: User = await this.userModel.findOne({ email: email })
     if (!user || !(await user.isMatchedPassword(password))) {
-      throw new UnauthorizedException()
+      throw new UnauthorizedException('Email or Password is incorrect')
     }
-    
-    const payload = { sub: user._id, email: user.email }
+
+    const payload = {
+      _id: user._id,
+      email: user.email,
+      username: user.username,
+      age: user.age,
+    }
     return {
       msg: 'Login Successfully',
       status: true,
@@ -58,7 +56,7 @@ export class UserService {
         _id: user._id,
         username: user.username,
         email: user.email,
-        age:user.age,
+        age: user.age,
         token: await this.jwtService.signAsync(payload),
       },
     }
@@ -132,6 +130,18 @@ export class UserService {
           status: true,
           deleteUser: deleteUser,
         }
+      }
+    } catch (error) {
+      throw new Error(error)
+    }
+  }
+
+  async deleteAllUser() {
+    try {
+      await this.userModel.deleteMany()
+      return {
+        msg: 'Delete all user successfully',
+        status: true,
       }
     } catch (error) {
       throw new Error(error)

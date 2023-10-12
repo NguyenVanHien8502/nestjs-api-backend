@@ -3,24 +3,29 @@
 import * as mongoose from 'mongoose'
 import * as bcrypt from 'bcrypt'
 
-export const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
+export const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    age: {
+      type: Number,
+    },
   },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
+  {
+    timestamps: true,
   },
-  password: {
-    type: String,
-    required: true,
-  },
-  age: {
-    type: Number,
-  },
-})
+)
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
@@ -35,8 +40,7 @@ userSchema.methods.isMatchedPassword = async function (enterPassword: string) {
 }
 
 export interface User extends Document {
-  [x: string]: any
-  // id: string
+  _id: any
   username: string
   email: string
   password: string
