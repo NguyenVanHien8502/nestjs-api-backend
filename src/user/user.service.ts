@@ -48,9 +48,11 @@ export class UserService {
     }
 
     const payload = {
+      _id: user._id,
       age: user.age,
     }
     const payload1 = {
+      _id: user._id,
       username: user.username,
     }
 
@@ -82,6 +84,23 @@ export class UserService {
         age: user.age,
         token: await this.jwtService.signAsync(payload),
       },
+    }
+  }
+
+  async handleRefreshToken(req: Request) {
+    try {
+      const findUser = await this.userModel.findOne({ refreshToken: req })
+      if (!findUser) {
+        throw new UnauthorizedException('Not authorization')
+      }
+      const payload = {
+        _id: findUser._id,
+        age: findUser.age,
+      }
+      const newToken = await this.jwtService.signAsync(payload)
+      return newToken
+    } catch (error) {
+      console.log(error)
     }
   }
 

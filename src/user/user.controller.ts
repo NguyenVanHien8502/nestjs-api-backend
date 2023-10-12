@@ -10,7 +10,7 @@ import {
   Param,
   Post,
   Put,
-  Request,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common'
@@ -18,7 +18,7 @@ import * as dotenv from 'dotenv'
 import { UserService } from './user.service'
 import { RegisterUserDto } from './dto/register-user.dto'
 import { UserGuard } from './user.guard'
-import { Response } from 'express'
+import { Request, Response } from 'express'
 
 dotenv.config()
 
@@ -42,7 +42,10 @@ export class UserController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async loginUser(@Body() registerUserDto: RegisterUserDto, @Res({passthrough: true}) res: Response) {
+  async loginUser(
+    @Body() registerUserDto: RegisterUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     try {
       const dataUser = await this.userService.loginUser(registerUserDto, res)
       return dataUser
@@ -51,9 +54,20 @@ export class UserController {
     }
   }
 
+  @Get('refreshToken')
+  async handleRefreshToken(@Req() req: Request) {
+    try {
+      const refreshToken = req.cookies.refreshToken
+      const newToken = await this.userService.handleRefreshToken(refreshToken)
+      return newToken
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   @Get('profile')
   @UseGuards(UserGuard)
-  getProfile(@Request() req) {
+  getProfile(@Req() req) {
     return req.user
   }
 
