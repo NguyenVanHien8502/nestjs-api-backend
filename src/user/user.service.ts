@@ -5,6 +5,7 @@ import { Model } from 'mongoose'
 import { User } from './user.model'
 import { JwtService } from '@nestjs/jwt'
 import { RegisterUserDto } from './dto/register-user.dto'
+import { Response } from 'express'
 
 @Injectable()
 export class UserService {
@@ -36,7 +37,10 @@ export class UserService {
     }
   }
 
-  async loginUser(registerUserDto: RegisterUserDto): Promise<any> {
+  async loginUser(
+    registerUserDto: RegisterUserDto,
+    res: Response,
+  ): Promise<any> {
     const { email, password } = registerUserDto
     const user: User = await this.userModel.findOne({ email: email })
     if (!user || !(await user.isMatchedPassword(password))) {
@@ -44,11 +48,30 @@ export class UserService {
     }
 
     const payload = {
-      _id: user._id,
-      email: user.email,
-      username: user.username,
       age: user.age,
     }
+    const payload1 = {
+      username: user.username,
+    }
+
+    const refreshToken = await this.jwtService.signAsync(payload1, {
+      expiresIn: '3h',
+    })
+
+    await this.userModel.findByIdAndUpdate(
+      user._id,
+      {
+        refreshToken: refreshToken,
+      },
+      {
+        new: true,
+      },
+    )
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      maxAge: 3 * 60 * 60 * 1000,
+    })
+
     return {
       msg: 'Login Successfully',
       status: true,

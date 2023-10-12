@@ -18,6 +18,9 @@ export const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    refreshToken: {
+      type: String,
+    },
     age: {
       type: Number,
     },
@@ -44,6 +47,7 @@ export interface User extends Document {
   username: string
   email: string
   password: string
+  refreshToken: string
   age?: number
   isMatchedPassword(enteredPassword: string): Promise<boolean>
 }

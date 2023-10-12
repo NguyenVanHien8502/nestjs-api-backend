@@ -6,11 +6,17 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { InjectModel } from '@nestjs/mongoose'
 import { Request } from 'express'
+import { Model } from 'mongoose'
+import { User } from './user.model'
 
 @Injectable()
 export class UserGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    @InjectModel('User') private readonly userModel: Model<User>,
+    private jwtService: JwtService,
+  ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
     const token = this.extractTokenFromHeader(request)
@@ -22,7 +28,13 @@ export class UserGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
       })
-      request['user'] = payload
+      const userCurrent = await this.userModel.findById(payload._id)
+      request['user'] = {
+        _id: userCurrent._id,
+        username: userCurrent.username,
+        email: userCurrent.email,
+        age: userCurrent.age,
+      }
     } catch {
       throw new UnauthorizedException(
         'Token is expired or error, please login again',
