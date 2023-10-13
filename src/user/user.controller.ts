@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import {
   Body,
   Controller,
@@ -14,13 +13,12 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common'
-import * as dotenv from 'dotenv'
 import { UserService } from './user.service'
 import { RegisterUserDto } from './dto/register-user.dto'
 import { UserGuard } from './user.guard'
 import { Request, Response } from 'express'
-
-dotenv.config()
+// import * as dotenv from 'dotenv'
+// dotenv.config()
 
 // domain: http://abc.localhost:3000
 // @Controller({
@@ -50,7 +48,7 @@ export class UserController {
       const dataUser = await this.userService.loginUser(registerUserDto, res)
       return dataUser
     } catch (err) {
-      console.log(err)
+      throw new Error(err)
     }
   }
 
@@ -61,7 +59,7 @@ export class UserController {
       const newToken = await this.userService.handleRefreshToken(refreshToken)
       return newToken
     } catch (error) {
-      console.log(error)
+      throw new Error(error)
     }
   }
 

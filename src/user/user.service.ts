@@ -1,5 +1,8 @@
-/* eslint-disable prettier/prettier */
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { User } from './user.model'
@@ -29,7 +32,12 @@ export class UserService {
         msg: 'This email already exists',
         status: false,
       }
-    const newUser = await this.userModel.create(registerUserDto)
+    const newUser = await this.userModel.create({
+      username: registerUserDto.username,
+      email: registerUserDto.email,
+      password: registerUserDto.password,
+      age: registerUserDto.age,
+    })
     return {
       msg: 'Register Successfully',
       status: true,
@@ -44,7 +52,7 @@ export class UserService {
     const { email, password } = registerUserDto
     const user: User = await this.userModel.findOne({ email: email })
     if (!user || !(await user.isMatchedPassword(password))) {
-      throw new UnauthorizedException('Email or Password is incorrect')
+      return new UnauthorizedException('Email or Password is incorrect')
     }
 
     const payload = {
@@ -82,25 +90,39 @@ export class UserService {
         username: user.username,
         email: user.email,
         age: user.age,
+        cart: user.cart,
         token: await this.jwtService.signAsync(payload),
       },
     }
   }
 
-  async handleRefreshToken(req: Request) {
+  async handleRefreshToken(refreshToken: string) {
     try {
-      const findUser = await this.userModel.findOne({ refreshToken: req })
+      const findUser = await this.userModel.findOne({
+        refreshToken: refreshToken,
+      })
       if (!findUser) {
-        throw new UnauthorizedException('Not authorization')
+        return new UnauthorizedException('Not authorization')
       }
-      const payload = {
-        _id: findUser._id,
-        age: findUser.age,
+      const decoded = this.jwtService.decode(refreshToken) as any
+      if (decoded.exp < new Date().getTime() / 1000) {
+        // refreshToken hết hạn
+        return new ForbiddenException(
+          'Refresh Token is expired or error. Please login again',
+        )
+      } else {
+        //refreshToken còn hạn
+        const payload = {
+          _id: findUser._id,
+          age: findUser.age,
+        }
+        const newToken = await this.jwtService.signAsync(payload)
+        return {
+          newToken: newToken,
+        }
       }
-      const newToken = await this.jwtService.signAsync(payload)
-      return newToken
     } catch (error) {
-      console.log(error)
+      throw new Error(error)
     }
   }
 

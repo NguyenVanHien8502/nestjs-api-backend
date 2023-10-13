@@ -1,7 +1,7 @@
-/* eslint-disable prettier/prettier */
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common'
@@ -29,16 +29,18 @@ export class UserGuard implements CanActivate {
         secret: process.env.JWT_SECRET,
       })
       const userCurrent = await this.userModel.findById(payload._id)
+      if (!userCurrent) {
+        throw new ForbiddenException('Not found user!!!')
+      }
+
       request['user'] = {
         _id: userCurrent._id,
         username: userCurrent.username,
         email: userCurrent.email,
         age: userCurrent.age,
       }
-    } catch {
-      throw new UnauthorizedException(
-        'Token is expired or error, please login again',
-      )
+    } catch (err) {
+      throw new UnauthorizedException(err)
     }
     return true
   }

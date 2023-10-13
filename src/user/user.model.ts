@@ -1,5 +1,3 @@
-/* eslint-disable prettier/prettier */
-
 import * as mongoose from 'mongoose'
 import * as bcrypt from 'bcrypt'
 
@@ -23,6 +21,10 @@ export const userSchema = new mongoose.Schema(
     },
     age: {
       type: Number,
+    },
+    cart: {
+      type: Array,
+      default: [],
     },
   },
   {
@@ -49,5 +51,6 @@ export interface User extends Document {
   password: string
   refreshToken: string
   age?: number
+  cart: []
   isMatchedPassword(enteredPassword: string): Promise<boolean>
 }
