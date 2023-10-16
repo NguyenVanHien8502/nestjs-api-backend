@@ -9,6 +9,7 @@ import { User } from './user.model'
 import { JwtService } from '@nestjs/jwt'
 import { RegisterUserDto } from './dto/register-user.dto'
 import { Response } from 'express'
+import { LoginUserDto } from './dto/login-user.dto'
 
 @Injectable()
 export class UserService {
@@ -45,11 +46,8 @@ export class UserService {
     }
   }
 
-  async loginUser(
-    registerUserDto: RegisterUserDto,
-    res: Response,
-  ): Promise<any> {
-    const { email, password } = registerUserDto
+  async loginUser(loginUserDto: LoginUserDto, res: Response): Promise<any> {
+    const { email, password } = loginUserDto
     const user: User = await this.userModel.findOne({ email: email })
     if (!user || !(await user.isMatchedPassword(password))) {
       return new UnauthorizedException('Email or Password is incorrect')

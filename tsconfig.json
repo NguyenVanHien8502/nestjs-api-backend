@@ -24,10 +24,10 @@
     "resolveJsonModule": true,
     "moduleResolution": "Node",
     "paths": {
-      "@esotericsoftware/*": ["./src/libs/*"]
+      "../*": ["src/*"]
     }
   },
-  "include": ["src/"],
+  "include": ["src"],
   "exclude": ["public/*", "view/*"],
   "ts-node": {
     "require": ["tsconfig-paths/register"]

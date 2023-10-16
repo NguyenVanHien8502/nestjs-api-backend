@@ -17,6 +17,8 @@ import { UserService } from './user.service'
 import { RegisterUserDto } from './dto/register-user.dto'
 import { UserGuard } from './user.guard'
 import { Request, Response } from 'express'
+import { ValidateMongodbId } from '../utils/validateMongodbId'
+import { LoginUserDto } from './dto/login-user.dto'
 // import * as dotenv from 'dotenv'
 // dotenv.config()
 
@@ -41,11 +43,11 @@ export class UserController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async loginUser(
-    @Body() registerUserDto: RegisterUserDto,
+    @Body() loginUserDto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const dataUser = await this.userService.loginUser(registerUserDto, res)
+      const dataUser = await this.userService.loginUser(loginUserDto, res)
       return dataUser
     } catch (err) {
       throw new Error(err)
@@ -80,8 +82,8 @@ export class UserController {
 
   @Get(':id')
   @UseGuards(UserGuard)
-  async getaUser(@Param() params: any) {
-    const user = await this.userService.getaUser(params.id)
+  async getaUser(@Param('id', ValidateMongodbId) id: string) {
+    const user = await this.userService.getaUser(id)
     return {
       user: user,
     }
@@ -90,7 +92,7 @@ export class UserController {
   @Put(':id')
   @UseGuards(UserGuard)
   async updateUser(
-    @Param() params: any,
+    @Param(ValidateMongodbId) params: any,
     @Body('username') username: string,
     @Body('age') age: number,
   ) {
@@ -100,7 +102,7 @@ export class UserController {
 
   @Delete(':id')
   @UseGuards(UserGuard)
-  async deleteUser(@Param() params: any) {
+  async deleteUser(@Param(ValidateMongodbId) params: any) {
     try {
       const result = await this.userService.deleteUser(params.id)
       return result
