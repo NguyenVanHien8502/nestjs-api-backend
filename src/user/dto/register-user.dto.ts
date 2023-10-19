@@ -9,6 +9,4 @@ export class RegisterUserDto {
 
   @IsNotEmpty()
   password: string
-
-  age: number
 }

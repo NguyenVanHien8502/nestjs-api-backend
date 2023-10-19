@@ -24,7 +24,6 @@ export class UserService {
     //   username: username,
     //   email: email,
     //   password: password,
-    //   age: age,
     // })
     // const result = await newUser.save()
     const findUser = await this.userModel.findOne({ email: email })
@@ -37,7 +36,6 @@ export class UserService {
       username: registerUserDto.username,
       email: registerUserDto.email,
       password: registerUserDto.password,
-      age: registerUserDto.age,
     })
     return {
       msg: 'Register Successfully',
@@ -55,7 +53,7 @@ export class UserService {
 
     const payload = {
       _id: user._id,
-      age: user.age,
+      role: user.role,
     }
     const payload1 = {
       _id: user._id,
@@ -87,8 +85,8 @@ export class UserService {
         _id: user._id,
         username: user.username,
         email: user.email,
-        age: user.age,
-        cart: user.cart,
+        phone: user.phone,
+        role: user.role,
         token: await this.jwtService.signAsync(payload),
       },
     }
@@ -112,7 +110,7 @@ export class UserService {
         //refreshToken còn hạn
         const payload = {
           _id: findUser._id,
-          age: findUser.age,
+          role: findUser.role,
         }
         const newToken = await this.jwtService.signAsync(payload)
         return {
@@ -148,7 +146,7 @@ export class UserService {
     }
   }
 
-  async updateUser(userId: any, username: string, age: number) {
+  async updateUser(userId: any, username: string, phone: string) {
     try {
       const findUser = await this.userModel.findById(userId)
       if (!findUser) {
@@ -161,7 +159,7 @@ export class UserService {
         userId,
         {
           username: username,
-          age: age,
+          phone: phone,
         },
         {
           new: true,

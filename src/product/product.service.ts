@@ -33,9 +33,7 @@ export class ProductService {
           status: false,
         }
       }
-      return {
-        product: findProduct,
-      }
+      return findProduct
     } catch (error) {
       throw new Error(error)
     }

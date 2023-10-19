@@ -37,7 +37,8 @@ export class UserGuard implements CanActivate {
         _id: userCurrent._id,
         username: userCurrent.username,
         email: userCurrent.email,
-        age: userCurrent.age,
+        phone: userCurrent.phone,
+        role: userCurrent.role,
       }
     } catch (err) {
       throw new UnauthorizedException(err)

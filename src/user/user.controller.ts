@@ -94,9 +94,9 @@ export class UserController {
   async updateUser(
     @Param(ValidateMongodbId) params: any,
     @Body('username') username: string,
-    @Body('age') age: number,
+    @Body('phone') phone: string,
   ) {
-    const result = await this.userService.updateUser(params.id, username, age)
+    const result = await this.userService.updateUser(params.id, username, phone)
     return result
   }
 

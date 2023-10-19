@@ -12,19 +12,23 @@ export const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    phone: {
+      type: String,
+    },
     password: {
       type: String,
       required: true,
     },
+    role: {
+      type: String,
+      default: 'user',
+    },
+    status: {
+      type: String,
+      enum: ['banned'],
+    },
     refreshToken: {
       type: String,
-    },
-    age: {
-      type: Number,
-    },
-    cart: {
-      type: Array,
-      default: [],
     },
   },
   {
@@ -48,9 +52,10 @@ export interface User extends Document {
   _id: any
   username: string
   email: string
+  phone: string
   password: string
+  role: string
+  status: string
   refreshToken: string
-  age?: number
-  cart: []
   isMatchedPassword(enteredPassword: string): Promise<boolean>
 }

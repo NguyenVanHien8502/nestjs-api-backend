@@ -4,7 +4,8 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { UserModule } from './user/user.module'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigModule } from '@nestjs/config'
-import { BrandModule } from './brand/brand.module'
+import { CategoryModule } from './category/category.module'
+import { MovieModule } from './movie/movie.module'
 
 @Module({
   imports: [
@@ -13,11 +14,12 @@ import { BrandModule } from './brand/brand.module'
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '1h' },
+      signOptions: { expiresIn: '1d' },
     }),
-    ProductModule,
     UserModule,
-    BrandModule,
+    ProductModule,
+    MovieModule,
+    CategoryModule,
   ],
 })
 export class AppModule {}
