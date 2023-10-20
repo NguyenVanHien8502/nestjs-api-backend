@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { User } from './user.model'
+import { User } from './user.schema'
 import { JwtService } from '@nestjs/jwt'
 import { RegisterUserDto } from './dto/register-user.dto'
 import { Response } from 'express'
@@ -16,8 +16,9 @@ export class UserService {
   private users: User[] = []
   constructor(
     private jwtService: JwtService,
-    @InjectModel('User') private readonly userModel: Model<User>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
+
   async register(registerUserDto: RegisterUserDto) {
     const { email } = registerUserDto
     // const newUser = new this.userModel({
@@ -61,7 +62,7 @@ export class UserService {
     }
 
     const refreshToken = await this.jwtService.signAsync(payload1, {
-      expiresIn: '3h',
+      expiresIn: '3d',
     })
 
     await this.userModel.findByIdAndUpdate(
@@ -75,7 +76,7 @@ export class UserService {
     )
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      maxAge: 3 * 60 * 60 * 1000,
+      maxAge: 72 * 60 * 60 * 1000,
     })
 
     return {

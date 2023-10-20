@@ -1,17 +1,18 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, isValidObjectId } from 'mongoose'
-import { Movie } from './movie.model'
+import { Movie } from './movie.schema'
 import { CreateMovieDto } from './dto/create-movie.dto'
 import { UpdateMovieDto } from './dto/update-movie.dto'
-import { Category } from '../category/category.model'
+import { Category } from '../category/category.schema'
 
 @Injectable()
 export class MovieService {
   constructor(
-    @InjectModel('Movie') private readonly movieModel: Model<Movie>,
-    @InjectModel('Category') private readonly categoryModel: Model<Category>,
+    @InjectModel(Movie.name) private readonly movieModel: Model<Movie>,
+    @InjectModel(Category.name) private readonly categoryModel: Model<Category>,
   ) {}
+
   async createMovie(
     createMovieDto: CreateMovieDto,
     currentUserId: string,

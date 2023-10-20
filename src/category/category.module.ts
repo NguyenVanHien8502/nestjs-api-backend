@@ -1,16 +1,16 @@
-import { Module, forwardRef } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { categorySchema } from './category.model'
 import { CategoryService } from './category.service'
 import { CategoryController } from './category.controller'
-import { MovieModule } from '../movie/movie.module'
 import { UserModule } from '../user/user.module'
+import { Category, CategorySchema } from './category.schema'
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: 'Category', schema: categorySchema }]),
-    // forwardRef(() => MovieModule),
-    forwardRef(() => UserModule),
+    MongooseModule.forFeature([
+      { name: Category.name, schema: CategorySchema },
+    ]),
+    UserModule,
   ],
   controllers: [CategoryController],
   providers: [CategoryService],

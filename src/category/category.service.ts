@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { Category } from './category.model'
+import { Category } from './category.schema'
 import { CreateCategoryDto } from './dto/create-category.dto'
 import { UpdateCategoryDto } from './dto/update-category.dto'
 
 @Injectable()
 export class CategoryService {
   constructor(
-    @InjectModel('Category') private readonly categoryModel: Model<Category>,
+    @InjectModel(Category.name) private readonly categoryModel: Model<Category>,
   ) {}
   async createCategory(createCategoryDto: CreateCategoryDto) {
     try {

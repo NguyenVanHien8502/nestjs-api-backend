@@ -9,12 +9,12 @@ import { JwtService } from '@nestjs/jwt'
 import { InjectModel } from '@nestjs/mongoose'
 import { Request } from 'express'
 import { Model } from 'mongoose'
-import { User } from './user.model'
+import { User } from './user.schema'
 
 @Injectable()
 export class UserGuard implements CanActivate {
   constructor(
-    @InjectModel('User') private readonly userModel: Model<User>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
     private jwtService: JwtService,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
