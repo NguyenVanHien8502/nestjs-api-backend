@@ -84,9 +84,7 @@ export class UserController {
   @UseGuards(UserGuard)
   async getaUser(@Param('id', ValidateMongodbId) id: string) {
     const user = await this.userService.getaUser(id)
-    return {
-      user: user,
-    }
+    return user
   }
 
   @Put(':id')
