@@ -1,12 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import * as mongoose from 'mongoose'
 import { HydratedDocument } from 'mongoose'
-import { Category } from '../category/category.schema'
 import { User } from '../user/user.schema'
 
 export type MovieDocument = HydratedDocument<Movie>
 
-@Schema()
+@Schema({ timestamps: true })
 export class Movie {
   @Prop({ required: true })
   name: string
@@ -14,12 +13,8 @@ export class Movie {
   @Prop()
   slug: string
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category',
-    required: true,
-  })
-  category: Category
+  @Prop({ required: true })
+  category: string
 
   @Prop()
   link: string

@@ -1,7 +1,7 @@
 export class CreateMovieDto {
   name: string
   slug: string
-  category: object
+  category: string
   link: string
   status: string
   desc: string

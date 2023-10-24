@@ -22,11 +22,9 @@ export class MovieController {
   @UseGuards(UserGuard)
   async createMovie(@Body() createMovieDto: CreateMovieDto, @Req() req) {
     const currentUserId = req.user._id.toString()
-    const categoryId = createMovieDto.category.toString()
     const newMovie = this.movieService.createMovie(
       createMovieDto,
       currentUserId,
-      categoryId,
     )
     return newMovie
   }
@@ -49,14 +47,8 @@ export class MovieController {
     @Req() req,
   ) {
     const currentUserId = req.user._id.toString()
-    const categoryId = updateMovieDto.category.toString()
 
-    return this.movieService.updateMovie(
-      id,
-      updateMovieDto,
-      currentUserId,
-      categoryId,
-    )
+    return this.movieService.updateMovie(id, updateMovieDto, currentUserId)
   }
 
   @Delete(':id')

@@ -13,25 +13,8 @@ export class MovieService {
     @InjectModel(Category.name) private readonly categoryModel: Model<Category>,
   ) {}
 
-  async createMovie(
-    createMovieDto: CreateMovieDto,
-    currentUserId: string,
-    categoryId: string,
-  ) {
+  async createMovie(createMovieDto: CreateMovieDto, currentUserId: string) {
     try {
-      if (!isValidObjectId(categoryId)) {
-        return {
-          msg: 'Invalid category ID format. Please provide a valid category ID.',
-          status: false,
-        }
-      }
-      const findCategory = await this.categoryModel.findById(categoryId)
-      if (!findCategory) {
-        return {
-          msg: 'Not exist this category, please pick other category again.',
-          status: false,
-        }
-      }
       const newMovie = await this.movieModel.create({
         name: createMovieDto.name,
         slug: createMovieDto.slug,
@@ -79,7 +62,6 @@ export class MovieService {
     id: string,
     updateMovieDto: UpdateMovieDto,
     currentUserId: string,
-    categoryId: string,
   ) {
     try {
       const findMovie = await this.movieModel.findById(id)
@@ -91,19 +73,6 @@ export class MovieService {
       }
       if (findMovie?.author.toString() !== currentUserId) {
         throw new ForbiddenException('Not authorization')
-      }
-      if (!isValidObjectId(categoryId)) {
-        return {
-          msg: 'Invalid category ID format. Please provide a valid category ID.',
-          status: false,
-        }
-      }
-      const findCategory = await this.categoryModel.findById(categoryId)
-      if (!findCategory) {
-        return {
-          msg: 'Not exist this category, please pick other category again.',
-          status: false,
-        }
       }
       const updatedMovie = await this.movieModel.findByIdAndUpdate(
         id,
