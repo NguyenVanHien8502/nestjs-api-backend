@@ -26,6 +26,27 @@ export class MovieService {
           status: false,
         }
       }
+
+      //check validate link url
+      const isValidUrl = (urlString: string) => {
+        const urlPattern = new RegExp(
+          '^(https?:\\/\\/)?' + // validate protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // validate domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))' + // validate OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // validate port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?' + // validate query string
+            '(\\#[-a-z\\d_]*)?$',
+          'i',
+        ) // validate fragment locator
+        return !!urlPattern.test(urlString)
+      }
+      if (!isValidUrl(createMovieDto.link)) {
+        return {
+          msg: 'Please fill in the correct url link format',
+          status: false,
+        }
+      }
+
       const newMovie = await this.movieModel.create({
         name: createMovieDto.name,
         slug: slugify(createMovieDto.name),
@@ -85,6 +106,8 @@ export class MovieService {
       if (findMovie?.author.toString() !== currentUserId) {
         throw new ForbiddenException('Not authorization')
       }
+
+      //check value status
       if (
         updateMovieDto.status !== 'pending' &&
         updateMovieDto.status !== 'processing' &&
@@ -92,6 +115,26 @@ export class MovieService {
       ) {
         return {
           msg: "Value of status must be 'pending' or 'processing' or 'done'",
+          status: false,
+        }
+      }
+
+      //check validate link url
+      const isValidUrl = (urlString: string) => {
+        const urlPattern = new RegExp(
+          '^(https?:\\/\\/)?' + // validate protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // validate domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))' + // validate OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // validate port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?' + // validate query string
+            '(\\#[-a-z\\d_]*)?$',
+          'i',
+        ) // validate fragment locator
+        return !!urlPattern.test(urlString)
+      }
+      if (!isValidUrl(updateMovieDto.link)) {
+        return {
+          msg: 'Please fill in the correct url link format',
           status: false,
         }
       }
