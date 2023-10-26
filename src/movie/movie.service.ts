@@ -5,6 +5,7 @@ import { Movie } from './movie.schema'
 import { CreateMovieDto } from './dto/create-movie.dto'
 import { UpdateMovieDto } from './dto/update-movie.dto'
 import { Category } from '../category/category.schema'
+import slugify from 'slugify'
 
 @Injectable()
 export class MovieService {
@@ -27,7 +28,7 @@ export class MovieService {
       }
       const newMovie = await this.movieModel.create({
         name: createMovieDto.name,
-        slug: createMovieDto.slug,
+        slug: slugify(createMovieDto.name),
         category: createMovieDto.category,
         link: createMovieDto.link,
         status: createMovieDto.status,
@@ -98,7 +99,7 @@ export class MovieService {
         id,
         {
           name: updateMovieDto.name,
-          slug: updateMovieDto.slug,
+          slug: slugify(updateMovieDto.name),
           category: updateMovieDto.category,
           link: updateMovieDto.link,
           status: updateMovieDto.status,

@@ -4,6 +4,7 @@ import { Model } from 'mongoose'
 import { Category } from './category.schema'
 import { CreateCategoryDto } from './dto/create-category.dto'
 import { UpdateCategoryDto } from './dto/update-category.dto'
+import slugify from 'slugify'
 
 @Injectable()
 export class CategoryService {
@@ -21,7 +22,13 @@ export class CategoryService {
           status: false,
         }
       }
-      const newCategory = await this.categoryModel.create(createCategoryDto)
+      const newCategory = await this.categoryModel.create({
+        name: createCategoryDto.name,
+        slug: slugify(createCategoryDto.name),
+        status: createCategoryDto.status,
+        desc: createCategoryDto.desc,
+      })
+
       return {
         msg: 'Created category successfully',
         status: true,
@@ -80,7 +87,7 @@ export class CategoryService {
         id,
         {
           name: updateCategoryDto.name,
-          slug: updateCategoryDto.slug,
+          slug: slugify(updateCategoryDto.name),
           status: updateCategoryDto.status,
           desc: updateCategoryDto.desc,
         },

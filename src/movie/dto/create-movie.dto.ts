@@ -4,8 +4,6 @@ export class CreateMovieDto {
   @IsNotEmpty()
   name: string
 
-  slug: string
-
   @IsNotEmpty()
   category: string
 
