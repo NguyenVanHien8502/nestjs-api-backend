@@ -1,17 +1,11 @@
 import * as bcrypt from 'bcrypt'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
-import * as mongoose from 'mongoose'
 
 export type UserDocument = HydratedDocument<User>
 
 @Schema({ timestamps: true })
 export class User {
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-  }) // Thêm decorator type cho trường "_id"
-  _id: any
-
   @Prop({ required: true })
   username: string
 
@@ -24,10 +18,10 @@ export class User {
   @Prop({ required: true })
   password: string
 
-  @Prop({ default: 'user' })
+  @Prop({ enum: ['user', 'admin'] })
   role: string
 
-  @Prop()
+  @Prop({ enum: ['alone', 'Married', 'tretrow', 'adult'] })
   status: string
 
   @Prop()

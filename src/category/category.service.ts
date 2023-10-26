@@ -12,6 +12,15 @@ export class CategoryService {
   ) {}
   async createCategory(createCategoryDto: CreateCategoryDto) {
     try {
+      if (
+        createCategoryDto.status !== 'public' &&
+        createCategoryDto.status !== 'private'
+      ) {
+        return {
+          msg: "Value of status must be 'public' of 'private'",
+          status: false,
+        }
+      }
       const newCategory = await this.categoryModel.create(createCategoryDto)
       return {
         msg: 'Created category successfully',
@@ -40,7 +49,9 @@ export class CategoryService {
 
   async getAllCategory() {
     try {
-      const allCategory = await this.categoryModel.find()
+      const allCategory = await this.categoryModel
+        .find()
+        .sort({ createdAt: -1 })
       return allCategory
     } catch (error) {
       throw new Error(error)
@@ -53,6 +64,15 @@ export class CategoryService {
       if (!findCategory) {
         return {
           msg: 'Not exist this category',
+          status: false,
+        }
+      }
+      if (
+        updateCategoryDto.status !== 'public' &&
+        updateCategoryDto.status !== 'private'
+      ) {
+        return {
+          msg: "Value of status must be 'public' of 'private'",
           status: false,
         }
       }

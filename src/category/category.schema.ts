@@ -11,7 +11,7 @@ export class Category {
   @Prop()
   slug: string
 
-  @Prop()
+  @Prop({ enum: ['private', 'public'], required: true })
   status: string
 
   @Prop()

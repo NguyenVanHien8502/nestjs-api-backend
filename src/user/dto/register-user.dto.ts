@@ -9,4 +9,11 @@ export class RegisterUserDto {
 
   @IsNotEmpty()
   password: string
+
+  phone: string
+
+  @IsNotEmpty()
+  role: string
+
+  status: string
 }

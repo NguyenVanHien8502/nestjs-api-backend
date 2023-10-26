@@ -19,6 +19,7 @@ import { UserGuard } from './user.guard'
 import { Request, Response } from 'express'
 import { ValidateMongodbId } from '../utils/validateMongodbId'
 import { LoginUserDto } from './dto/login-user.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
 // import * as dotenv from 'dotenv'
 // dotenv.config()
 
@@ -91,10 +92,9 @@ export class UserController {
   @UseGuards(UserGuard)
   async updateUser(
     @Param(ValidateMongodbId) params: any,
-    @Body('username') username: string,
-    @Body('phone') phone: string,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
-    const result = await this.userService.updateUser(params.id, username, phone)
+    const result = await this.userService.updateUser(params.id, updateUserDto)
     return result
   }
 

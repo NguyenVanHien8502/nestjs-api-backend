@@ -15,6 +15,16 @@ export class MovieService {
 
   async createMovie(createMovieDto: CreateMovieDto, currentUserId: string) {
     try {
+      if (
+        createMovieDto.status !== 'pending' &&
+        createMovieDto.status !== 'processing' &&
+        createMovieDto.status !== 'done'
+      ) {
+        return {
+          msg: "Value of status must be 'pending' or 'processing' or 'done'",
+          status: false,
+        }
+      }
       const newMovie = await this.movieModel.create({
         name: createMovieDto.name,
         slug: createMovieDto.slug,
@@ -51,7 +61,7 @@ export class MovieService {
 
   async getAllMovie() {
     try {
-      const allMovie = await this.movieModel.find()
+      const allMovie = await this.movieModel.find().sort({ createdAt: -1 })
       return allMovie
     } catch (error) {
       throw new Error(error)
@@ -73,6 +83,16 @@ export class MovieService {
       }
       if (findMovie?.author.toString() !== currentUserId) {
         throw new ForbiddenException('Not authorization')
+      }
+      if (
+        updateMovieDto.status !== 'pending' &&
+        updateMovieDto.status !== 'processing' &&
+        updateMovieDto.status !== 'done'
+      ) {
+        return {
+          msg: "Value of status must be 'pending' or 'processing' or 'done'",
+          status: false,
+        }
       }
       const updatedMovie = await this.movieModel.findByIdAndUpdate(
         id,

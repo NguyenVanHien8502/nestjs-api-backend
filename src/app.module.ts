@@ -1,4 +1,3 @@
-import { ProductModule } from './product/product.module'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { UserModule } from './user/user.module'
@@ -17,7 +16,6 @@ import { MovieModule } from './movie/movie.module'
       signOptions: { expiresIn: '1d' },
     }),
     UserModule,
-    ProductModule,
     MovieModule,
     CategoryModule,
   ],

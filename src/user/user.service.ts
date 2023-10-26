@@ -10,10 +10,10 @@ import { JwtService } from '@nestjs/jwt'
 import { RegisterUserDto } from './dto/register-user.dto'
 import { Response } from 'express'
 import { LoginUserDto } from './dto/login-user.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
 
 @Injectable()
 export class UserService {
-  private users: User[] = []
   constructor(
     private jwtService: JwtService,
     @InjectModel(User.name) private readonly userModel: Model<User>,
@@ -21,22 +21,36 @@ export class UserService {
 
   async register(registerUserDto: RegisterUserDto) {
     const { email } = registerUserDto
-    // const newUser = new this.userModel({
-    //   username: username,
-    //   email: email,
-    //   password: password,
-    // })
-    // const result = await newUser.save()
     const findUser = await this.userModel.findOne({ email: email })
     if (findUser)
       return {
         msg: 'This email already exists',
         status: false,
       }
+    if (registerUserDto.role !== 'user' && registerUserDto.role !== 'admin') {
+      return {
+        msg: "Value of role must be 'user' or 'admin'",
+        status: false,
+      }
+    }
+    if (
+      registerUserDto.status !== 'alone' &&
+      registerUserDto.status !== 'adult' &&
+      registerUserDto.status !== 'tretrow' &&
+      registerUserDto.status !== 'married'
+    ) {
+      return {
+        msg: "Value of status must be 'alone' or 'adult' or 'tretrow' or 'married'",
+        status: false,
+      }
+    }
     const newUser = await this.userModel.create({
       username: registerUserDto.username,
       email: registerUserDto.email,
       password: registerUserDto.password,
+      phone: registerUserDto.phone,
+      role: registerUserDto.role,
+      status: registerUserDto.status,
     })
     return {
       msg: 'Register Successfully',
@@ -47,7 +61,7 @@ export class UserService {
 
   async loginUser(loginUserDto: LoginUserDto, res: Response): Promise<any> {
     const { email, password } = loginUserDto
-    const user: User = await this.userModel.findOne({ email: email })
+    const user = await this.userModel.findOne({ email: email })
     if (!user || !(await user.isMatchedPassword(password))) {
       return new UnauthorizedException('Email or Password is incorrect')
     }
@@ -125,7 +139,7 @@ export class UserService {
 
   async getAllUser() {
     try {
-      const allUsers = await this.userModel.find().exec()
+      const allUsers = await this.userModel.find().sort({ createdAt: -1 })
       return allUsers as User[]
     } catch (error) {
       throw new Error(error)
@@ -147,7 +161,7 @@ export class UserService {
     }
   }
 
-  async updateUser(userId: any, username: string, phone: string) {
+  async updateUser(userId: any, updateUserDto: UpdateUserDto) {
     try {
       const findUser = await this.userModel.findById(userId)
       if (!findUser) {
@@ -156,11 +170,30 @@ export class UserService {
           status: false,
         }
       }
+      if (updateUserDto.role !== 'admin' && updateUserDto.role !== 'user') {
+        return {
+          msg: "Value of role must be 'admin' or 'user'",
+          status: false,
+        }
+      }
+      if (
+        updateUserDto.status !== 'alone' &&
+        updateUserDto.status !== 'adult' &&
+        updateUserDto.status !== 'tretrow' &&
+        updateUserDto.status !== 'married'
+      ) {
+        return {
+          msg: "Value of status must be 'alone' or 'adult' or 'tretrow' or 'married'",
+          status: false,
+        }
+      }
       const updateUser = await this.userModel.findByIdAndUpdate(
         userId,
         {
-          username: username,
-          phone: phone,
+          username: updateUserDto.username,
+          phone: updateUserDto.phone,
+          role: updateUserDto.role,
+          status: updateUserDto.status,
         },
         {
           new: true,
