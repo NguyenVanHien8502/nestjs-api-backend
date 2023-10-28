@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Req,
   UseGuards,
 } from '@nestjs/common'
 import { UserGuard } from '../user/user.guard'
@@ -13,6 +14,7 @@ import { ValidateMongodbId } from '../utils/validateMongodbId'
 import { CategoryService } from './category.service'
 import { CreateCategoryDto } from './dto/create-category.dto'
 import { UpdateCategoryDto } from './dto/update-category.dto'
+import { Request } from 'express'
 
 @Controller('api/category')
 export class CategoryController {
@@ -31,8 +33,8 @@ export class CategoryController {
   }
 
   @Get()
-  async getAllCategory() {
-    return this.categoryService.getAllCategory()
+  async getAllCategory(@Req() req: Request) {
+    return this.categoryService.getAllCategory(req)
   }
 
   @Put(':id')

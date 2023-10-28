@@ -5,6 +5,7 @@ import { Category } from './category.schema'
 import { CreateCategoryDto } from './dto/create-category.dto'
 import { UpdateCategoryDto } from './dto/update-category.dto'
 import slugify from 'slugify'
+import { Request } from 'express'
 
 @Injectable()
 export class CategoryService {
@@ -54,12 +55,33 @@ export class CategoryService {
     }
   }
 
-  async getAllCategory() {
+  async getAllCategory(req: Request) {
     try {
-      const allCategory = await this.categoryModel
-        .find()
-        .sort({ createdAt: -1 })
-      return allCategory
+      let options = {}
+
+      if (req.query.s) {
+        options = {
+          $or: [
+            { name: new RegExp(req.query.s.toString(), 'i') },
+            { desc: new RegExp(req.query.s.toString(), 'i') },
+          ],
+        }
+      }
+
+      const categories = this.categoryModel.find(options).sort({ name: 1 })
+
+      const page: number = parseInt(req.query.page as any) || 1
+      const limit = parseInt(req.query.limit as any) || 100
+      const skip = (page - 1) * limit
+      const total_categories = await this.categoryModel.count(options)
+      const data = await categories.skip(skip).limit(limit).exec()
+
+      return {
+        data,
+        total_categories,
+        page,
+        total_page: Math.ceil(total_categories / limit),
+      }
     } catch (error) {
       throw new Error(error)
     }

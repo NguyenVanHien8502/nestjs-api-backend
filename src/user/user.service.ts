@@ -20,13 +20,38 @@ export class UserService {
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
-    const { email } = registerUserDto
+    const { email, password, username, role } = registerUserDto
+    if (!email || !password || !username || !role) {
+      return {
+        msg: 'Please complete all information to login',
+        status: false,
+      }
+    }
+    const isValidEmail = (email: string) => {
+      const re =
+        /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      if (re.test(email)) return true
+      else return false
+    }
+    if (email !== '' && !isValidEmail(email)) {
+      return {
+        msg: 'Invalid email address',
+        status: false,
+      }
+    }
     const findUser = await this.userModel.findOne({ email: email })
-    if (findUser)
+    if (findUser) {
       return {
         msg: 'This email already exists',
         status: false,
       }
+    }
+    if (password !== '' && password.length < 4) {
+      return {
+        msg: 'Password should be least 4 characters',
+        status: false,
+      }
+    }
     if (registerUserDto.role !== 'user' && registerUserDto.role !== 'admin') {
       return {
         msg: "Value of role must be 'user' or 'admin'",
@@ -34,6 +59,7 @@ export class UserService {
       }
     }
     if (
+      registerUserDto.status &&
       registerUserDto.status !== 'alone' &&
       registerUserDto.status !== 'adult' &&
       registerUserDto.status !== 'tretrow' &&
@@ -61,9 +87,36 @@ export class UserService {
 
   async loginUser(loginUserDto: LoginUserDto, res: Response): Promise<any> {
     const { email, password } = loginUserDto
+    if (!email || !password) {
+      return {
+        msg: 'Please complete all information to login',
+        status: false,
+      }
+    }
+    const isValidEmail = (email: string) => {
+      const re =
+        /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      if (re.test(email)) return true
+      else return false
+    }
+    if (email !== '' && !isValidEmail(email)) {
+      return {
+        msg: 'Invalid email address',
+        status: false,
+      }
+    }
     const user = await this.userModel.findOne({ email: email })
-    if (!user || !(await user.isMatchedPassword(password))) {
-      return new UnauthorizedException('Email or Password is incorrect')
+    if (!user) {
+      return {
+        msg: 'Not exist this email',
+        status: false,
+      }
+    }
+    if (user && !(await user.isMatchedPassword(password))) {
+      return {
+        msg: 'Password information is incorrect',
+        status: false,
+      }
     }
 
     const payload = {
