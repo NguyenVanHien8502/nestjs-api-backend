@@ -10,13 +10,13 @@ export class Movie {
   @Prop({ required: true })
   name: string
 
-  @Prop()
+  @Prop({ required: true })
   slug: string
 
   @Prop({ required: true })
   category: string
 
-  @Prop()
+  @Prop({ required: true })
   link: string
 
   @Prop({ required: true, enum: ['pending', 'processing', 'done'] })

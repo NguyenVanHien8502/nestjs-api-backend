@@ -8,7 +8,7 @@ export class Category {
   @Prop({ required: true })
   name: string
 
-  @Prop()
+  @Prop({ required: true })
   slug: string
 
   @Prop({ enum: ['private', 'public'], required: true })

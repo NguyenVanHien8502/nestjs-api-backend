@@ -6,6 +6,7 @@ import { CreateMovieDto } from './dto/create-movie.dto'
 import { UpdateMovieDto } from './dto/update-movie.dto'
 import { Category } from '../category/category.schema'
 import slugify from 'slugify'
+import { Request } from 'express'
 
 @Injectable()
 export class MovieService {
@@ -16,10 +17,17 @@ export class MovieService {
 
   async createMovie(createMovieDto: CreateMovieDto, currentUserId: string) {
     try {
+      const { name, slug, category, link, status, desc } = createMovieDto
+      if (!name || !slug || !category || !link || !status) {
+        return {
+          msg: 'Please fill in the required fields to create a movie',
+          status: false,
+        }
+      }
       if (
-        createMovieDto.status !== 'pending' &&
-        createMovieDto.status !== 'processing' &&
-        createMovieDto.status !== 'done'
+        status !== 'pending' &&
+        status !== 'processing' &&
+        status !== 'done'
       ) {
         return {
           msg: "Value of status must be 'pending' or 'processing' or 'done'",
@@ -48,12 +56,12 @@ export class MovieService {
       }
 
       const newMovie = await this.movieModel.create({
-        name: createMovieDto.name,
-        slug: slugify(createMovieDto.name),
-        category: createMovieDto.category,
-        link: createMovieDto.link,
-        status: createMovieDto.status,
-        desc: createMovieDto.desc,
+        name: name,
+        slug: slugify(slug),
+        category: category,
+        link: link,
+        status: status,
+        desc: desc,
         author: currentUserId,
       })
       return {
@@ -81,10 +89,43 @@ export class MovieService {
     }
   }
 
-  async getAllMovie() {
+  async getAllMovie(req: Request) {
     try {
-      const allMovie = await this.movieModel.find().sort({ createdAt: -1 })
-      return allMovie
+      let options = {}
+
+      if (req.query.s) {
+        options = {
+          $or: [
+            { name: new RegExp(req.query.s.toString(), 'i') },
+            { slug: new RegExp(req.query.s.toString(), 'i') },
+            { category: new RegExp(req.query.s.toString(), 'i') },
+          ],
+        }
+      }
+
+      let sortOrder = {}
+
+      if (req.query.sort) {
+        const sortName = Object.keys(req.query.sort)[0]
+        sortOrder = { [sortName]: req.query.sort[sortName] }
+      }
+
+      const movies = this.movieModel.find(options).sort(sortOrder)
+
+      const page: number = parseInt(req.query.page as any) || 1
+      const limit = parseInt(req.query.limit as any) || 100
+      const skip = (page - 1) * limit
+
+      const totalMovies = await this.movieModel.count(options)
+      const data = await movies.skip(skip).limit(limit).exec()
+
+      return {
+        data,
+        totalMovies,
+        page,
+        limit,
+        total_page: Math.ceil(totalMovies / limit),
+      }
     } catch (error) {
       throw new Error(error)
     }
@@ -96,6 +137,13 @@ export class MovieService {
     currentUserId: string,
   ) {
     try {
+      const { name, slug, category, link, status, desc } = updateMovieDto
+      if (!name || !slug || !category || !link || !status) {
+        return {
+          msg: 'Please fill in the required fields to update a movie',
+          status: false,
+        }
+      }
       const findMovie = await this.movieModel.findById(id)
       if (!findMovie) {
         return {
@@ -104,7 +152,10 @@ export class MovieService {
         }
       }
       if (findMovie?.author.toString() !== currentUserId) {
-        throw new ForbiddenException('Not authorization')
+        throw new ForbiddenException({
+          msg: 'Not authorization',
+          status: false,
+        })
       }
 
       //check value status
@@ -129,7 +180,7 @@ export class MovieService {
             '(\\?[;&a-z\\d%_.~+=-]*)?' + // validate query string
             '(\\#[-a-z\\d_]*)?$',
           'i',
-        ) // validate fragment locator
+        )
         return !!urlPattern.test(urlString)
       }
       if (!isValidUrl(updateMovieDto.link)) {
@@ -141,12 +192,12 @@ export class MovieService {
       const updatedMovie = await this.movieModel.findByIdAndUpdate(
         id,
         {
-          name: updateMovieDto.name,
-          slug: slugify(updateMovieDto.name),
-          category: updateMovieDto.category,
-          link: updateMovieDto.link,
-          status: updateMovieDto.status,
-          desc: updateMovieDto.desc,
+          name: name,
+          slug: slugify(slug),
+          category: category,
+          link: link,
+          status: status,
+          desc: desc,
         },
         {
           new: true,

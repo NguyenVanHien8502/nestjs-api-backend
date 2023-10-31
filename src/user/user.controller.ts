@@ -74,11 +74,8 @@ export class UserController {
 
   @Get()
   @UseGuards(UserGuard)
-  async getAllUser() {
-    const allUsers = await this.userService.getAllUser()
-    return {
-      allUsers: allUsers,
-    }
+  async getAllUser(@Req() req: Request) {
+    return await this.userService.getAllUser(req)
   }
 
   @Get(':id')

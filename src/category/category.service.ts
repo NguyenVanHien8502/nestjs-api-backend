@@ -14,20 +14,24 @@ export class CategoryService {
   ) {}
   async createCategory(createCategoryDto: CreateCategoryDto) {
     try {
-      if (
-        createCategoryDto.status !== 'public' &&
-        createCategoryDto.status !== 'private'
-      ) {
+      const { name, slug, status, desc } = createCategoryDto
+      if (!name || !slug || !status) {
+        return {
+          msg: 'Please fill in the required fields to create a category',
+          status: false,
+        }
+      }
+      if (status !== 'public' && status !== 'private') {
         return {
           msg: "Value of status must be 'public' of 'private'",
           status: false,
         }
       }
       const newCategory = await this.categoryModel.create({
-        name: createCategoryDto.name,
-        slug: slugify(createCategoryDto.name),
-        status: createCategoryDto.status,
-        desc: createCategoryDto.desc,
+        name: name,
+        slug: slugify(slug),
+        status: status,
+        desc: desc,
       })
 
       return {
@@ -60,27 +64,30 @@ export class CategoryService {
       let options = {}
 
       if (req.query.s) {
-        options = {
-          $or: [
-            { name: new RegExp(req.query.s.toString(), 'i') },
-            { desc: new RegExp(req.query.s.toString(), 'i') },
-          ],
-        }
+        options = { name: new RegExp(req.query.s.toString(), 'i') }
       }
 
-      const categories = this.categoryModel.find(options).sort({ name: 1 })
+      let sortOrder = {}
+      if (req.query.sort) {
+        const sortName = Object.keys(req.query.sort)[0]
+        sortOrder = { [sortName]: req.query.sort[sortName] }
+      }
+
+      const categories = this.categoryModel.find(options).sort(sortOrder)
 
       const page: number = parseInt(req.query.page as any) || 1
       const limit = parseInt(req.query.limit as any) || 100
       const skip = (page - 1) * limit
-      const total_categories = await this.categoryModel.count(options)
+
+      const totalCategories = await this.categoryModel.count(options)
       const data = await categories.skip(skip).limit(limit).exec()
 
       return {
         data,
-        total_categories,
+        totalCategories,
         page,
-        total_page: Math.ceil(total_categories / limit),
+        limit,
+        total_page: Math.ceil(totalCategories / limit),
       }
     } catch (error) {
       throw new Error(error)
@@ -89,6 +96,7 @@ export class CategoryService {
 
   async updateCategory(id: string, updateCategoryDto: UpdateCategoryDto) {
     try {
+      const { name, slug, status, desc } = updateCategoryDto
       const findCategory = await this.categoryModel.findById(id)
       if (!findCategory) {
         return {
@@ -96,10 +104,13 @@ export class CategoryService {
           status: false,
         }
       }
-      if (
-        updateCategoryDto.status !== 'public' &&
-        updateCategoryDto.status !== 'private'
-      ) {
+      if (!name || !slug || !status) {
+        return {
+          msg: 'Please fill in the required fields to update a category',
+          status: false,
+        }
+      }
+      if (status !== 'public' && status !== 'private') {
         return {
           msg: "Value of status must be 'public' of 'private'",
           status: false,
@@ -108,10 +119,10 @@ export class CategoryService {
       const updatedCategory = await this.categoryModel.findByIdAndUpdate(
         id,
         {
-          name: updateCategoryDto.name,
-          slug: slugify(updateCategoryDto.name),
-          status: updateCategoryDto.status,
-          desc: updateCategoryDto.desc,
+          name: name,
+          slug: slugify(slug),
+          status: status,
+          desc: desc,
         },
         {
           new: true,

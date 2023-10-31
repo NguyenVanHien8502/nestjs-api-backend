@@ -34,7 +34,7 @@ export class CategoryController {
 
   @Get()
   async getAllCategory(@Req() req: Request) {
-    return this.categoryService.getAllCategory(req)
+    return await this.categoryService.getAllCategory(req)
   }
 
   @Put(':id')

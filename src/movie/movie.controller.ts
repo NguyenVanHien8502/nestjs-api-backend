@@ -14,6 +14,7 @@ import { UserGuard } from '../user/user.guard'
 import { ValidateMongodbId } from '../utils/validateMongodbId'
 import { CreateMovieDto } from './dto/create-movie.dto'
 import { UpdateMovieDto } from './dto/update-movie.dto'
+import { Request } from 'express'
 
 @Controller('api/movie')
 export class MovieController {
@@ -35,8 +36,8 @@ export class MovieController {
   }
 
   @Get()
-  async getAllMovie() {
-    return this.movieService.getAllMovie()
+  async getAllMovie(@Req() req: Request) {
+    return await this.movieService.getAllMovie(req)
   }
 
   @Put(':id')

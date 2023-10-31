@@ -8,9 +8,10 @@ import { Model } from 'mongoose'
 import { User } from './user.schema'
 import { JwtService } from '@nestjs/jwt'
 import { RegisterUserDto } from './dto/register-user.dto'
-import { Response } from 'express'
+import { Request, Response } from 'express'
 import { LoginUserDto } from './dto/login-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
+import validator from 'validator'
 
 @Injectable()
 export class UserService {
@@ -20,7 +21,7 @@ export class UserService {
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
-    const { email, password, username, role } = registerUserDto
+    const { email, password, username, role, status, phone } = registerUserDto
     if (!email || !password || !username || !role) {
       return {
         msg: 'Please complete all information to login',
@@ -46,24 +47,30 @@ export class UserService {
         status: false,
       }
     }
+    if (username !== '' && username.length < 2) {
+      return {
+        msg: 'Username should be least 2 characters',
+        status: false,
+      }
+    }
     if (password !== '' && password.length < 4) {
       return {
         msg: 'Password should be least 4 characters',
         status: false,
       }
     }
-    if (registerUserDto.role !== 'user' && registerUserDto.role !== 'admin') {
+    if (role !== 'user' && role !== 'admin') {
       return {
         msg: "Value of role must be 'user' or 'admin'",
         status: false,
       }
     }
     if (
-      registerUserDto.status &&
-      registerUserDto.status !== 'alone' &&
-      registerUserDto.status !== 'adult' &&
-      registerUserDto.status !== 'tretrow' &&
-      registerUserDto.status !== 'married'
+      status &&
+      status !== 'alone' &&
+      status !== 'adult' &&
+      status !== 'tretrow' &&
+      status !== 'married'
     ) {
       return {
         msg: "Value of status must be 'alone' or 'adult' or 'tretrow' or 'married'",
@@ -71,15 +78,15 @@ export class UserService {
       }
     }
     const newUser = await this.userModel.create({
-      username: registerUserDto.username,
-      email: registerUserDto.email,
-      password: registerUserDto.password,
-      phone: registerUserDto.phone,
-      role: registerUserDto.role,
-      status: registerUserDto.status,
+      username: username,
+      email: email,
+      password: password,
+      phone: phone,
+      role: role,
+      status: status,
     })
     return {
-      msg: 'Register Successfully',
+      msg: 'Registered Successfully',
       status: true,
       newUser: newUser,
     }
@@ -190,10 +197,41 @@ export class UserService {
     }
   }
 
-  async getAllUser() {
+  async getAllUser(req: Request) {
     try {
-      const allUsers = await this.userModel.find().sort({ createdAt: -1 })
-      return allUsers as User[]
+      let options = {}
+
+      if (req.query.s) {
+        options = {
+          $or: [
+            { username: new RegExp(req.query.s.toString(), 'i') },
+            { email: new RegExp(req.query.s.toString(), 'i') },
+          ],
+        }
+      }
+
+      let sortOrder = {}
+      if (req.query.sort) {
+        const sortName = Object.keys(req.query.sort)[0]
+        sortOrder = { [sortName]: req.query.sort[sortName] }
+      }
+
+      const users = this.userModel.find(options).sort(sortOrder)
+
+      const page: number = parseInt(req.query.page as any) || 1
+      const limit = parseInt(req.query.limit as any) || 100
+      const skip = (page - 1) * limit
+
+      const totalUsers = await this.userModel.count(options)
+      const data = await users.skip(skip).limit(limit).exec()
+
+      return {
+        data,
+        totalUsers,
+        page,
+        limit,
+        total_page: Math.ceil(totalUsers / limit),
+      }
     } catch (error) {
       throw new Error(error)
     }
@@ -216,6 +254,8 @@ export class UserService {
 
   async updateUser(userId: any, updateUserDto: UpdateUserDto) {
     try {
+      const { username, phone, role, status } = updateUserDto
+
       const findUser = await this.userModel.findById(userId)
       if (!findUser) {
         return {
@@ -223,17 +263,43 @@ export class UserService {
           status: false,
         }
       }
-      if (updateUserDto.role !== 'admin' && updateUserDto.role !== 'user') {
+
+      if (!username || !role || !status) {
+        return {
+          msg: 'Please fill in the required fields to update a user',
+          status: false,
+        }
+      }
+
+      if (username !== '' && username.length < 2) {
+        return {
+          msg: 'Username should be least 2 characters',
+          status: false,
+        }
+      }
+
+      const validatePhoneNumber = (phoneNumber: string) => {
+        return validator.isMobilePhone(phoneNumber)
+      }
+
+      if (!validatePhoneNumber(phone)) {
+        return {
+          msg: 'Please enter valid phone number',
+          status: false,
+        }
+      }
+
+      if (role !== 'admin' && role !== 'user') {
         return {
           msg: "Value of role must be 'admin' or 'user'",
           status: false,
         }
       }
       if (
-        updateUserDto.status !== 'alone' &&
-        updateUserDto.status !== 'adult' &&
-        updateUserDto.status !== 'tretrow' &&
-        updateUserDto.status !== 'married'
+        status !== 'alone' &&
+        status !== 'adult' &&
+        status !== 'tretrow' &&
+        status !== 'married'
       ) {
         return {
           msg: "Value of status must be 'alone' or 'adult' or 'tretrow' or 'married'",
@@ -243,17 +309,17 @@ export class UserService {
       const updateUser = await this.userModel.findByIdAndUpdate(
         userId,
         {
-          username: updateUserDto.username,
-          phone: updateUserDto.phone,
-          role: updateUserDto.role,
-          status: updateUserDto.status,
+          username: username,
+          phone: phone,
+          role: role,
+          status: status,
         },
         {
           new: true,
         },
       )
       return {
-        msg: 'Update User Successfully',
+        msg: 'Updated User Successfully',
         status: true,
         updateUser: updateUser,
       }
@@ -273,7 +339,7 @@ export class UserService {
       } else {
         const deleteUser = await this.userModel.findByIdAndDelete(userId)
         return {
-          msg: 'Delete User Successfully',
+          msg: 'Deleted User Successfully',
           status: true,
           deleteUser: deleteUser,
         }
@@ -287,7 +353,7 @@ export class UserService {
     try {
       await this.userModel.deleteMany()
       return {
-        msg: 'Delete all user successfully',
+        msg: 'Deleted all user successfully',
         status: true,
       }
     } catch (error) {

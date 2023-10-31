@@ -1,15 +1,12 @@
-import { IsNotEmpty } from 'class-validator'
-
 export class CreateMovieDto {
-  @IsNotEmpty()
   name: string
 
-  @IsNotEmpty()
+  slug: string
+
   category: string
 
   link: string
 
-  @IsNotEmpty()
   status: string
 
   desc: string
