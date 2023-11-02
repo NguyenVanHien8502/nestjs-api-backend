@@ -19,7 +19,7 @@ export class Movie {
   @Prop({ required: true })
   link: string
 
-  @Prop({ required: true, enum: ['pending', 'processing', 'done'] })
+  @Prop({ enum: ['pending', 'processing', 'active'], default: 'pending' })
   status: string
 
   @Prop()

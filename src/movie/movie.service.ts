@@ -18,19 +18,24 @@ export class MovieService {
   async createMovie(createMovieDto: CreateMovieDto, currentUserId: string) {
     try {
       const { name, slug, category, link, status, desc } = createMovieDto
-      if (!name || !slug || !category || !link || !status) {
+      if (!name || !category || !link || !status) {
         return {
           msg: 'Please fill in the required fields to create a movie',
           status: false,
         }
       }
+      if (!slug) {
+        createMovieDto.slug = slugify(name)
+      } else {
+        createMovieDto.slug = slugify(slug)
+      }
       if (
         status !== 'pending' &&
         status !== 'processing' &&
-        status !== 'done'
+        status !== 'active'
       ) {
         return {
-          msg: "Value of status must be 'pending' or 'processing' or 'done'",
+          msg: "Value of status must be 'pending' or 'processing' or 'active'",
           status: false,
         }
       }
@@ -57,7 +62,7 @@ export class MovieService {
 
       const newMovie = await this.movieModel.create({
         name: name,
-        slug: slugify(slug),
+        slug: createMovieDto.slug,
         category: category,
         link: link,
         status: status,
@@ -138,12 +143,6 @@ export class MovieService {
   ) {
     try {
       const { name, slug, category, link, status, desc } = updateMovieDto
-      if (!name || !slug || !category || !link || !status) {
-        return {
-          msg: 'Please fill in the required fields to update a movie',
-          status: false,
-        }
-      }
       const findMovie = await this.movieModel.findById(id)
       if (!findMovie) {
         return {
@@ -158,14 +157,27 @@ export class MovieService {
         })
       }
 
+      if (!name || !category || !link || !status) {
+        return {
+          msg: 'Please fill in the required fields to update a movie',
+          status: false,
+        }
+      }
+
+      if (!slug) {
+        updateMovieDto.slug = slugify(name)
+      } else {
+        updateMovieDto.slug = slugify(slug)
+      }
+
       //check value status
       if (
         updateMovieDto.status !== 'pending' &&
         updateMovieDto.status !== 'processing' &&
-        updateMovieDto.status !== 'done'
+        updateMovieDto.status !== 'active'
       ) {
         return {
-          msg: "Value of status must be 'pending' or 'processing' or 'done'",
+          msg: "Value of status must be 'pending' or 'processing' or 'active'",
           status: false,
         }
       }
@@ -193,7 +205,7 @@ export class MovieService {
         id,
         {
           name: name,
-          slug: slugify(slug),
+          slug: updateMovieDto.slug,
           category: category,
           link: link,
           status: status,
@@ -236,10 +248,26 @@ export class MovieService {
     }
   }
 
-  async deleteAllMovie() {
+  async deleteManyMovie(req: Request) {
     try {
-      const deletedAllMovie = await this.movieModel.deleteMany()
-      return deletedAllMovie
+      const { movieIds } = req.body
+      movieIds?.forEach(async (movieId) => {
+        const findMovie = await this.movieModel.findById(movieId)
+        if (!findMovie) {
+          return {
+            msg: `MovieId ${movieId} is not exists`,
+            status: false,
+          }
+        }
+      })
+      const deletedManyMovie = await this.movieModel.deleteMany({
+        _id: { $in: movieIds },
+      })
+      return {
+        msg: 'Deleted movies successfully',
+        status: true,
+        deletedManyMovie: deletedManyMovie,
+      }
     } catch (error) {
       throw new Error(error)
     }

@@ -349,12 +349,25 @@ export class UserService {
     }
   }
 
-  async deleteAllUser() {
+  async deleteManyUser(req: Request) {
     try {
-      await this.userModel.deleteMany()
+      const { userIds } = req.body
+      userIds?.forEach(async (userId) => {
+        const findUser = await this.userModel.findById(userId)
+        if (!findUser) {
+          return {
+            msg: `User ${userId} is not exists`,
+            status: false,
+          }
+        }
+      })
+      const deletedManyUser = await this.userModel.deleteMany({
+        _id: { $in: userIds },
+      })
       return {
-        msg: 'Deleted all user successfully',
+        msg: 'Deleted Users Successfully',
         status: true,
+        deletedManyUser: deletedManyUser,
       }
     } catch (error) {
       throw new Error(error)

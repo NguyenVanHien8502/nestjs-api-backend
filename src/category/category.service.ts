@@ -15,11 +15,16 @@ export class CategoryService {
   async createCategory(createCategoryDto: CreateCategoryDto) {
     try {
       const { name, slug, status, desc } = createCategoryDto
-      if (!name || !slug || !status) {
+      if (!name || !status) {
         return {
           msg: 'Please fill in the required fields to create a category',
           status: false,
         }
+      }
+      if (!slug) {
+        createCategoryDto.slug = slugify(name)
+      } else {
+        createCategoryDto.slug = slugify(slug)
       }
       if (status !== 'public' && status !== 'private') {
         return {
@@ -29,7 +34,7 @@ export class CategoryService {
       }
       const newCategory = await this.categoryModel.create({
         name: name,
-        slug: slugify(slug),
+        slug: createCategoryDto.slug,
         status: status,
         desc: desc,
       })
@@ -104,12 +109,19 @@ export class CategoryService {
           status: false,
         }
       }
-      if (!name || !slug || !status) {
+      if (!name || !status) {
         return {
           msg: 'Please fill in the required fields to update a category',
           status: false,
         }
       }
+
+      if (!slug) {
+        updateCategoryDto.slug = slugify(name)
+      } else {
+        updateCategoryDto.slug = slugify(slug)
+      }
+
       if (status !== 'public' && status !== 'private') {
         return {
           msg: "Value of status must be 'public' of 'private'",
@@ -120,7 +132,7 @@ export class CategoryService {
         id,
         {
           name: name,
-          slug: slugify(slug),
+          slug: updateCategoryDto.slug,
           status: status,
           desc: desc,
         },
@@ -152,6 +164,31 @@ export class CategoryService {
         msg: 'Deleted category successfully',
         status: true,
         deletedCategory: deletedCategory,
+      }
+    } catch (error) {
+      throw new Error(error)
+    }
+  }
+
+  async deleteManyCategory(req: Request) {
+    try {
+      const { categoryIds } = req.body
+      categoryIds?.forEach(async (categoryId) => {
+        const findCategory = await this.categoryModel.findById(categoryId)
+        if (!findCategory) {
+          return {
+            msg: `CategoryId ${categoryId} is not exists`,
+            status: false,
+          }
+        }
+      })
+      const deletedManyCategory = await this.categoryModel.deleteMany({
+        _id: { $in: categoryIds },
+      })
+      return {
+        msg: 'Deleted categories successfully',
+        status: true,
+        deletedManyCategory: deletedManyCategory,
       }
     } catch (error) {
       throw new Error(error)

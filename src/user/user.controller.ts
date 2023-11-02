@@ -20,6 +20,7 @@ import { Request, Response } from 'express'
 import { ValidateMongodbId } from '../utils/validateMongodbId'
 import { LoginUserDto } from './dto/login-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
+import { AdminGuard } from './admin.guard'
 // import * as dotenv from 'dotenv'
 // dotenv.config()
 
@@ -56,6 +57,7 @@ export class UserController {
   }
 
   @Get('refreshToken')
+  @UseGuards(UserGuard)
   async handleRefreshToken(@Req() req: Request) {
     try {
       const refreshToken = req.cookies.refreshToken
@@ -73,7 +75,7 @@ export class UserController {
   }
 
   @Get()
-  @UseGuards(UserGuard)
+  @UseGuards(AdminGuard)
   async getAllUser(@Req() req: Request) {
     return await this.userService.getAllUser(req)
   }
@@ -86,7 +88,7 @@ export class UserController {
   }
 
   @Put(':id')
-  @UseGuards(UserGuard)
+  @UseGuards(AdminGuard)
   async updateUser(
     @Param(ValidateMongodbId) params: any,
     @Body() updateUserDto: UpdateUserDto,
@@ -96,7 +98,7 @@ export class UserController {
   }
 
   @Delete(':id')
-  @UseGuards(UserGuard)
+  @UseGuards(AdminGuard)
   async deleteUser(@Param(ValidateMongodbId) params: any) {
     try {
       const result = await this.userService.deleteUser(params.id)
@@ -107,11 +109,10 @@ export class UserController {
   }
 
   @Delete()
-  @UseGuards(UserGuard)
-  async deleteAllUser() {
+  @UseGuards(AdminGuard)
+  async deleteManyUser(@Req() req: Request) {
     try {
-      const result = await this.userService.deleteAllUser()
-      return result
+      return await this.userService.deleteManyUser(req)
     } catch (error) {
       throw new Error(error)
     }
