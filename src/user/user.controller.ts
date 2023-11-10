@@ -21,6 +21,7 @@ import { ValidateMongodbId } from '../utils/validateMongodbId'
 import { LoginUserDto } from './dto/login-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { AdminGuard } from './admin.guard'
+import { ChangePasswordUserDto } from './dto/changePassword-user.dto'
 // import * as dotenv from 'dotenv'
 // dotenv.config()
 
@@ -42,7 +43,7 @@ export class UserController {
     return result
   }
 
-  @Post('login')
+  @Post('login/user')
   @HttpCode(HttpStatus.OK)
   async loginUser(
     @Body() loginUserDto: LoginUserDto,
@@ -56,6 +57,20 @@ export class UserController {
     }
   }
 
+  @Post('login/admin')
+  @HttpCode(HttpStatus.OK)
+  async loginAdmin(
+    @Body() loginUserDto: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      const dataAdmin = await this.userService.loginAdmin(loginUserDto, res)
+      return dataAdmin
+    } catch (err) {
+      throw new Error(err)
+    }
+  }
+
   @Get('refreshToken')
   @UseGuards(UserGuard)
   async handleRefreshToken(@Req() req: Request) {
@@ -63,6 +78,23 @@ export class UserController {
       const refreshToken = req.cookies.refreshToken
       const newToken = await this.userService.handleRefreshToken(refreshToken)
       return newToken
+    } catch (error) {
+      throw new Error(error)
+    }
+  }
+
+  @Put('change-password')
+  @UseGuards(UserGuard)
+  async changePassword(
+    @Body() changePasswordUserDto: ChangePasswordUserDto,
+    @Req() req,
+  ) {
+    try {
+      const currentUserId = req.user?._id
+      return await this.userService.changePassword(
+        changePasswordUserDto,
+        currentUserId,
+      )
     } catch (error) {
       throw new Error(error)
     }

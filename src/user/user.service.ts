@@ -12,6 +12,7 @@ import { Request, Response } from 'express'
 import { LoginUserDto } from './dto/login-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import validator from 'validator'
+import { ChangePasswordUserDto } from './dto/changePassword-user.dto'
 
 @Injectable()
 export class UserService {
@@ -168,6 +169,90 @@ export class UserService {
     }
   }
 
+  async loginAdmin(loginUserDto: LoginUserDto, res: Response): Promise<any> {
+    const { email, password } = loginUserDto
+    if (!email || !password) {
+      return {
+        msg: 'Please complete all information to login',
+        status: false,
+      }
+    }
+    const isValidEmail = (email: string) => {
+      const re =
+        /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      if (re.test(email)) return true
+      else return false
+    }
+    if (email !== '' && !isValidEmail(email)) {
+      return {
+        msg: 'Invalid email address',
+        status: false,
+      }
+    }
+    const user = await this.userModel.findOne({ email: email })
+    if (!user) {
+      return {
+        msg: 'Not exist this email',
+        status: false,
+      }
+    }
+
+    if (user && !(await user.isMatchedPassword(password))) {
+      return {
+        msg: 'Password information is incorrect',
+        status: false,
+      }
+    }
+
+    if (user && user.role !== 'admin') {
+      return {
+        msg: 'You are not an admin',
+        status: false,
+      }
+    }
+
+    const payload = {
+      _id: user._id,
+      role: user.role,
+    }
+    const payload1 = {
+      _id: user._id,
+      username: user.username,
+    }
+
+    const refreshToken = await this.jwtService.signAsync(payload1, {
+      expiresIn: '3d',
+    })
+
+    await this.userModel.findByIdAndUpdate(
+      user._id,
+      {
+        refreshToken: refreshToken,
+      },
+      {
+        new: true,
+      },
+    )
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      maxAge: 72 * 60 * 60 * 1000,
+    })
+
+    return {
+      msg: 'Login Successfully',
+      status: true,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+        token: await this.jwtService.signAsync(payload),
+      },
+    }
+  }
+
   async handleRefreshToken(refreshToken: string) {
     try {
       const findUser = await this.userModel.findOne({
@@ -192,6 +277,67 @@ export class UserService {
         return {
           newToken: newToken,
         }
+      }
+    } catch (error) {
+      throw new Error(error)
+    }
+  }
+
+  async changePassword(
+    changePasswordUserDto: ChangePasswordUserDto,
+    currentUserId: object,
+  ) {
+    const { currentPassword, newPassword, confirmPassword } =
+      changePasswordUserDto
+    try {
+      const user = await this.userModel.findById(currentUserId)
+      if (!user) {
+        return {
+          msg: 'Not exists this user',
+          status: false,
+        }
+      }
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        return {
+          msg: 'Please complete all information to change your password',
+          status: false,
+        }
+      }
+
+      if (!(await user.isMatchedPassword(currentPassword))) {
+        return {
+          msg: 'You have entered your current password incorrectly',
+          status: false,
+        }
+      }
+
+      if (newPassword !== confirmPassword) {
+        return {
+          msg: 'New password and confirm password must be the same',
+          status: false,
+        }
+      }
+
+      if (newPassword !== '' && newPassword.length < 4) {
+        return {
+          msg: 'Password should be least 4 characters',
+          status: false,
+        }
+      }
+
+      if (currentPassword === newPassword) {
+        return {
+          msg: 'The old and new passwords must be different',
+          status: false,
+        }
+      }
+
+      user.password = newPassword
+      await user.save()
+      return {
+        msg: 'Change password successfully',
+        status: true,
       }
     } catch (error) {
       throw new Error(error)
@@ -287,7 +433,7 @@ export class UserService {
         return validator.isMobilePhone(phoneNumber)
       }
 
-      if (!validatePhoneNumber(phone)) {
+      if (phone && !validatePhoneNumber(phone)) {
         return {
           msg: 'Please enter valid phone number',
           status: false,

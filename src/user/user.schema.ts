@@ -21,7 +21,7 @@ export class User {
   @Prop({ enum: ['user', 'admin'], required: true })
   role: string
 
-  @Prop({ enum: ['alone', 'Married', 'tretrow', 'adult'] })
+  @Prop({ enum: ['alone', 'married', 'tretrow', 'adult'] })
   status: string
 
   @Prop()
