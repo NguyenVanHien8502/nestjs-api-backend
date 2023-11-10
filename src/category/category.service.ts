@@ -73,12 +73,14 @@ export class CategoryService {
       }
 
       let sortOrder = {}
+      let categories
       if (req.query.sort) {
         const sortName = Object.keys(req.query.sort)[0]
         sortOrder = { [sortName]: req.query.sort[sortName] }
+        categories = this.categoryModel.find(options).sort(sortOrder)
+      } else {
+        categories = this.categoryModel.find(options).sort({ name: 'asc' })
       }
-
-      const categories = this.categoryModel.find(options).sort(sortOrder)
 
       const page: number = parseInt(req.query.page as any) || 1
       const limit = parseInt(req.query.limit as any) || 100
@@ -89,6 +91,8 @@ export class CategoryService {
 
       return {
         data,
+        status: true,
+        sortOrder,
         totalCategories,
         page,
         limit,

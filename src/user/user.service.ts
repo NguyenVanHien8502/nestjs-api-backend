@@ -24,7 +24,7 @@ export class UserService {
     const { email, password, username, role, status, phone } = registerUserDto
     if (!email || !password || !username || !role) {
       return {
-        msg: 'Please complete all information to login',
+        msg: 'Please complete all information to register the account',
         status: false,
       }
     }
@@ -162,6 +162,7 @@ export class UserService {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        status: user.status,
         token: await this.jwtService.signAsync(payload),
       },
     }
@@ -211,12 +212,14 @@ export class UserService {
       }
 
       let sortOrder = {}
+      let users
       if (req.query.sort) {
         const sortName = Object.keys(req.query.sort)[0]
         sortOrder = { [sortName]: req.query.sort[sortName] }
+        users = this.userModel.find(options).sort(sortOrder)
+      } else {
+        users = this.userModel.find(options).sort({ username: 'asc' })
       }
-
-      const users = this.userModel.find(options).sort(sortOrder)
 
       const page: number = parseInt(req.query.page as any) || 1
       const limit = parseInt(req.query.limit as any) || 100
@@ -227,6 +230,8 @@ export class UserService {
 
       return {
         data,
+        status: true,
+        sortOrder,
         totalUsers,
         page,
         limit,

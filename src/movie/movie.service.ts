@@ -109,13 +109,14 @@ export class MovieService {
       }
 
       let sortOrder = {}
-
+      let movies
       if (req.query.sort) {
         const sortName = Object.keys(req.query.sort)[0]
         sortOrder = { [sortName]: req.query.sort[sortName] }
+        movies = this.movieModel.find(options).sort(sortOrder)
+      } else {
+        movies = this.movieModel.find(options).sort({ name: 'asc' })
       }
-
-      const movies = this.movieModel.find(options).sort(sortOrder)
 
       const page: number = parseInt(req.query.page as any) || 1
       const limit = parseInt(req.query.limit as any) || 100
@@ -126,6 +127,8 @@ export class MovieService {
 
       return {
         data,
+        status: true,
+        sortOrder,
         totalMovies,
         page,
         limit,
@@ -151,10 +154,10 @@ export class MovieService {
         }
       }
       if (findMovie?.author.toString() !== currentUserId) {
-        throw new ForbiddenException({
+        return {
           msg: 'Not authorization',
           status: false,
-        })
+        }
       }
 
       if (!name || !category || !link || !status) {

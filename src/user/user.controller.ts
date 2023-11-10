@@ -71,11 +71,15 @@ export class UserController {
   @Get('profile')
   @UseGuards(UserGuard)
   getProfile(@Req() req) {
-    return req.user
+    return {
+      msg: 'Get profile successfully',
+      status: true,
+      profile: req.user,
+    }
   }
 
   @Get()
-  @UseGuards(AdminGuard)
+  @UseGuards(UserGuard)
   async getAllUser(@Req() req: Request) {
     return await this.userService.getAllUser(req)
   }
