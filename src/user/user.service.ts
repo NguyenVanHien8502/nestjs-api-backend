@@ -357,15 +357,14 @@ export class UserService {
         }
       }
 
-      let sortOrder = {}
-      let users
-      if (req.query.sort) {
-        const sortName = Object.keys(req.query.sort)[0]
-        sortOrder = { [sortName]: req.query.sort[sortName] }
-        users = this.userModel.find(options).sort(sortOrder)
-      } else {
-        users = this.userModel.find(options).sort({ username: 'asc' })
-      }
+      // let sortOrder = {}
+      // if (req.query.sort) {
+      //   const sortName = Object.keys(req.query.sort)[0]
+      //   sortOrder = { [sortName]: req.query.sort[sortName] }
+      // }
+      // const users = this.userModel.find(options).sort(sortOrder)
+
+      const users = this.userModel.find(options).sort({ username: 'asc' })
 
       const page: number = parseInt(req.query.page as any) || 1
       const limit = parseInt(req.query.limit as any) || 100
@@ -377,7 +376,6 @@ export class UserService {
       return {
         data,
         status: true,
-        sortOrder,
         totalUsers,
         page,
         limit,

@@ -108,15 +108,14 @@ export class MovieService {
         }
       }
 
-      let sortOrder = {}
-      let movies
-      if (req.query.sort) {
-        const sortName = Object.keys(req.query.sort)[0]
-        sortOrder = { [sortName]: req.query.sort[sortName] }
-        movies = this.movieModel.find(options).sort(sortOrder)
-      } else {
-        movies = this.movieModel.find(options).sort({ name: 'asc' })
-      }
+      // let sortOrder = {}
+      // if (req.query.sort) {
+      //   const sortName = Object.keys(req.query.sort)[0]
+      //   sortOrder = { [sortName]: req.query.sort[sortName] }
+      // }
+      // const movies = this.movieModel.find(options).sort(sortOrder)
+
+      const movies = this.movieModel.find(options).sort({ name: 'asc' })
 
       const page: number = parseInt(req.query.page as any) || 1
       const limit = parseInt(req.query.limit as any) || 100
@@ -128,7 +127,6 @@ export class MovieService {
       return {
         data,
         status: true,
-        sortOrder,
         totalMovies,
         page,
         limit,
