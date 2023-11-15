@@ -10,7 +10,7 @@ export class Movie {
   @Prop({ required: true })
   name: string
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   slug: string
 
   @Prop({ required: true })

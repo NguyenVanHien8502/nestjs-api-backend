@@ -18,21 +18,60 @@ export class MovieService {
   async createMovie(createMovieDto: CreateMovieDto, currentUserId: string) {
     try {
       const { name, slug, category, link, status, desc } = createMovieDto
-      if (!name || !category || !link || !status) {
+
+      if (!name) {
         return {
-          msg: 'Please fill in the required fields to create a movie',
+          msg: 'The field "Name" must be filled in',
           status: false,
         }
       }
+
+      if (!category) {
+        return {
+          msg: 'The field "Category" must be filled in',
+          status: false,
+        }
+      }
+
+      if (!link) {
+        return {
+          msg: 'The field "Link" must be filled in',
+          status: false,
+        }
+      }
+
+      if (!status) {
+        createMovieDto.status = 'pending'
+      }
+
       if (!slug) {
+        const alreadySlugMovie = await this.movieModel.findOne({
+          slug: slugify(name),
+        })
+        if (alreadySlugMovie) {
+          return {
+            msg: 'This slug already exists',
+            status: false,
+          }
+        }
         createMovieDto.slug = slugify(name)
       } else {
+        const alreadySlugMovie = await this.movieModel.findOne({
+          slug: slugify(slug),
+        })
+        if (alreadySlugMovie) {
+          return {
+            msg: 'This slug already exists',
+            status: false,
+          }
+        }
         createMovieDto.slug = slugify(slug)
       }
+
       if (
-        status !== 'pending' &&
-        status !== 'processing' &&
-        status !== 'active'
+        createMovieDto.status !== 'pending' &&
+        createMovieDto.status !== 'processing' &&
+        createMovieDto.status !== 'active'
       ) {
         return {
           msg: "Value of status must be 'pending' or 'processing' or 'active'",
@@ -65,10 +104,11 @@ export class MovieService {
         slug: createMovieDto.slug,
         category: category,
         link: link,
-        status: status,
+        status: status ? status : 'pending',
         desc: desc,
         author: currentUserId,
       })
+
       return {
         msg: 'Created movie successfully',
         status: true,
@@ -108,14 +148,7 @@ export class MovieService {
         }
       }
 
-      // let sortOrder = {}
-      // if (req.query.sort) {
-      //   const sortName = Object.keys(req.query.sort)[0]
-      //   sortOrder = { [sortName]: req.query.sort[sortName] }
-      // }
-      // const movies = this.movieModel.find(options).sort(sortOrder)
-
-      const movies = this.movieModel.find(options).sort({ name: 'asc' })
+      const movies = this.movieModel.find(options)
 
       const page: number = parseInt(req.query.page as any) || 1
       const limit = parseInt(req.query.limit as any) || 100
@@ -158,16 +191,49 @@ export class MovieService {
         }
       }
 
-      if (!name || !category || !link || !status) {
+      if (!name) {
         return {
-          msg: 'Please fill in the required fields to update a movie',
+          msg: 'The field "Name" must be filled in',
+          status: false,
+        }
+      }
+
+      if (!category) {
+        return {
+          msg: 'The field "Category" must be filled in',
+          status: false,
+        }
+      }
+
+      if (!link) {
+        return {
+          msg: 'The field "Link" must be filled in',
+          status: false,
+        }
+      }
+
+      if (!status) {
+        return {
+          msg: 'The field "Status" must be filled in',
           status: false,
         }
       }
 
       if (!slug) {
-        updateMovieDto.slug = slugify(name)
+        return {
+          msg: 'The field "Slug" must be filled in',
+          status: false,
+        }
       } else {
+        const alreadySlugMovie = await this.movieModel.findOne({
+          slug: slugify(slug),
+        })
+        if (alreadySlugMovie._id.toString() !== id) {
+          return {
+            msg: 'This slug already exists',
+            status: false,
+          }
+        }
         updateMovieDto.slug = slugify(slug)
       }
 

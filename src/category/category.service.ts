@@ -15,18 +15,46 @@ export class CategoryService {
   async createCategory(createCategoryDto: CreateCategoryDto) {
     try {
       const { name, slug, status, desc } = createCategoryDto
-      if (!name || !status) {
+      if (!name) {
         return {
-          msg: 'Please fill in the required fields to create a category',
+          msg: 'The field "Name" must be filled in',
           status: false,
         }
       }
+
+      if (!status) {
+        createCategoryDto.status = 'public'
+      }
+
       if (!slug) {
+        const alreadySlugCategory = await this.categoryModel.findOne({
+          slug: slugify(name),
+        })
+        if (alreadySlugCategory) {
+          return {
+            msg: 'This slug already exists',
+            status: false,
+          }
+        }
         createCategoryDto.slug = slugify(name)
       } else {
+        const alreadySlugCategory = await this.categoryModel.findOne({
+          slug: slugify(slug),
+        })
+        if (alreadySlugCategory) {
+          return {
+            msg: 'This slug already exists',
+            status: false,
+          }
+        }
         createCategoryDto.slug = slugify(slug)
       }
-      if (status !== 'public' && status !== 'private') {
+
+      //check value status
+      if (
+        createCategoryDto.status !== 'public' &&
+        createCategoryDto.status !== 'private'
+      ) {
         return {
           msg: "Value of status must be 'public' of 'private'",
           status: false,
@@ -35,7 +63,7 @@ export class CategoryService {
       const newCategory = await this.categoryModel.create({
         name: name,
         slug: createCategoryDto.slug,
-        status: status,
+        status: status ? status : 'public',
         desc: desc,
       })
 
@@ -72,14 +100,7 @@ export class CategoryService {
         options = { name: new RegExp(req.query.s.toString(), 'i') }
       }
 
-      // let sortOrder = {}
-      // if (req.query.sort) {
-      //   const sortName = Object.keys(req.query.sort)[0]
-      //   sortOrder = { [sortName]: req.query.sort[sortName] }
-      // }
-      // const categories = this.categoryModel.find(options).sort(sortOrder)
-
-      const categories = this.categoryModel.find(options).sort({ name: 'asc' })
+      const categories = this.categoryModel.find(options)
 
       const page: number = parseInt(req.query.page as any) || 1
       const limit = parseInt(req.query.limit as any) || 100
@@ -111,19 +132,39 @@ export class CategoryService {
           status: false,
         }
       }
-      if (!name || !status) {
+      if (!name) {
         return {
-          msg: 'Please fill in the required fields to update a category',
+          msg: 'The field "Name" must be filled in',
+          status: false,
+        }
+      }
+
+      if (!status) {
+        return {
+          msg: 'The field "Status" must be filled in',
           status: false,
         }
       }
 
       if (!slug) {
-        updateCategoryDto.slug = slugify(name)
+        return {
+          msg: 'The field "Slug" must be filled in',
+          status: false,
+        }
       } else {
+        const alreadySlugCategory = await this.categoryModel.findOne({
+          slug: slugify(slug),
+        })
+        if (alreadySlugCategory._id.toString() !== id) {
+          return {
+            msg: 'This slug already exists',
+            status: false,
+          }
+        }
         updateCategoryDto.slug = slugify(slug)
       }
 
+      //check value status
       if (status !== 'public' && status !== 'private') {
         return {
           msg: "Value of status must be 'public' of 'private'",

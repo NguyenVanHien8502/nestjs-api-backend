@@ -23,12 +23,31 @@ export class UserService {
 
   async register(registerUserDto: RegisterUserDto) {
     const { email, password, username, role, status, phone } = registerUserDto
-    if (!email || !password || !username || !role) {
+    if (!email) {
       return {
-        msg: 'Please complete all information to register the account',
+        msg: 'The field "Email" must be filled in',
         status: false,
       }
     }
+    if (!password) {
+      return {
+        msg: 'The field "Password" must be filled in',
+        status: false,
+      }
+    }
+    if (!username) {
+      return {
+        msg: 'The field "Username" must be filled in',
+        status: false,
+      }
+    }
+    if (!role) {
+      return {
+        msg: 'The field "Role" must be filled in',
+        status: false,
+      }
+    }
+
     const isValidEmail = (email: string) => {
       const re =
         /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -66,18 +85,7 @@ export class UserService {
         status: false,
       }
     }
-    if (
-      status &&
-      status !== 'alone' &&
-      status !== 'adult' &&
-      status !== 'tretrow' &&
-      status !== 'married'
-    ) {
-      return {
-        msg: "Value of status must be 'alone' or 'adult' or 'tretrow' or 'married'",
-        status: false,
-      }
-    }
+
     const newUser = await this.userModel.create({
       username: username,
       email: email,
@@ -357,14 +365,7 @@ export class UserService {
         }
       }
 
-      // let sortOrder = {}
-      // if (req.query.sort) {
-      //   const sortName = Object.keys(req.query.sort)[0]
-      //   sortOrder = { [sortName]: req.query.sort[sortName] }
-      // }
-      // const users = this.userModel.find(options).sort(sortOrder)
-
-      const users = this.userModel.find(options).sort({ username: 'asc' })
+      const users = this.userModel.find(options)
 
       const page: number = parseInt(req.query.page as any) || 1
       const limit = parseInt(req.query.limit as any) || 100
@@ -413,24 +414,30 @@ export class UserService {
         }
       }
 
-      if (!username || !role || !status) {
+      if (!username) {
         return {
-          msg: 'Please fill in the required fields to update a user',
+          msg: 'The field "Username" must be filled in',
+          status: false,
+        }
+      }
+      if (!role) {
+        return {
+          msg: 'The field "Role" must be filled in',
           status: false,
         }
       }
 
-      if (username !== '' && username.length < 2) {
+      if (username && username.length < 2) {
         return {
           msg: 'Username should be least 2 characters',
           status: false,
         }
       }
 
+      //check valid phone number
       const validatePhoneNumber = (phoneNumber: string) => {
         return validator.isMobilePhone(phoneNumber)
       }
-
       if (phone && !validatePhoneNumber(phone)) {
         return {
           msg: 'Please enter valid phone number',
@@ -438,21 +445,26 @@ export class UserService {
         }
       }
 
+      //check value role
       if (role !== 'admin' && role !== 'user') {
         return {
           msg: "Value of role must be 'admin' or 'user'",
           status: false,
         }
       }
-      if (
-        status !== 'alone' &&
-        status !== 'adult' &&
-        status !== 'tretrow' &&
-        status !== 'married'
-      ) {
-        return {
-          msg: "Value of status must be 'alone' or 'adult' or 'tretrow' or 'married'",
-          status: false,
+
+      //check value status
+      if (status) {
+        if (
+          status !== 'alone' &&
+          status !== 'adult' &&
+          status !== 'tretrow' &&
+          status !== 'married'
+        ) {
+          return {
+            msg: "Value of status must be 'alone' or 'adult' or 'tretrow' or 'married'",
+            status: false,
+          }
         }
       }
       const updateUser = await this.userModel.findByIdAndUpdate(
