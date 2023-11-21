@@ -40,7 +40,15 @@ export class MovieController {
   @Get()
   @UseGuards(UserGuard)
   async getAllMovie(@Req() req: Request) {
-    return await this.movieService.getAllMovie(req)
+    const keySearch: string = req.query?.s?.toString()
+    const currentPage: number = req.query.page as any
+    const itemsPerPage: number = req.query.limit as any
+
+    return await this.movieService.getAllMovie(
+      keySearch,
+      currentPage,
+      itemsPerPage,
+    )
   }
 
   @Put(':id')

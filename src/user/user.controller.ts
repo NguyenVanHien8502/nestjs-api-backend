@@ -97,7 +97,14 @@ export class UserController {
   @Get()
   @UseGuards(UserGuard)
   async getAllUser(@Req() req: Request) {
-    return await this.userService.getAllUser(req)
+    const keySearch: string = req.query?.s?.toString()
+    const currentPage: number = req.query.page as any
+    const itemsPerPage: number = req.query.limit as any
+    return await this.userService.getAllUser(
+      keySearch,
+      currentPage,
+      itemsPerPage,
+    )
   }
 
   @Get(':id')

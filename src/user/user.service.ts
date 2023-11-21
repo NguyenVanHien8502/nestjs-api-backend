@@ -286,24 +286,28 @@ export class UserService {
     }
   }
 
-  async getAllUser(req: Request) {
+  async getAllUser(
+    keySearch?: string,
+    currentPage?: number,
+    itemsPerPage?: number,
+  ) {
     try {
       let options = {}
 
-      if (req.query.s) {
+      if (keySearch) {
         options = {
           $or: [
-            { username: new RegExp(req.query.s.toString(), 'i') },
-            { email: new RegExp(req.query.s.toString(), 'i') },
+            { username: new RegExp(keySearch.toString(), 'i') },
+            { email: new RegExp(keySearch.toString(), 'i') },
           ],
         }
       }
 
       const users = this.userModel.find(options)
 
-      const page: number = parseInt(req.query.page as any) || 1
-      const limit = parseInt(req.query.limit as any) || 100
-      const skip = (page - 1) * limit
+      const page: number = currentPage || 1
+      const limit: number = itemsPerPage || 100
+      const skip: number = (page - 1) * limit
 
       const totalUsers = await this.userModel.count(options)
       const data = await users.skip(skip).limit(limit).exec()

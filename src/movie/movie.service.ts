@@ -110,25 +110,29 @@ export class MovieService {
     }
   }
 
-  async getAllMovie(req: Request) {
+  async getAllMovie(
+    keySearch?: string,
+    currentPage?: number,
+    itemsPerPage?: number,
+  ) {
     try {
       let options = {}
 
-      if (req.query.s) {
+      if (keySearch) {
         options = {
           $or: [
-            { name: new RegExp(req.query.s.toString(), 'i') },
-            { slug: new RegExp(req.query.s.toString(), 'i') },
-            { category: new RegExp(req.query.s.toString(), 'i') },
+            { name: new RegExp(keySearch.toString(), 'i') },
+            { slug: new RegExp(keySearch.toString(), 'i') },
+            { category: new RegExp(keySearch.toString(), 'i') },
           ],
         }
       }
 
       const movies = this.movieModel.find(options)
 
-      const page: number = parseInt(req.query.page as any) || 1
-      const limit = parseInt(req.query.limit as any) || 100
-      const skip = (page - 1) * limit
+      const page: number = currentPage || 1
+      const limit: number = itemsPerPage || 100
+      const skip: number = (page - 1) * limit
 
       const totalMovies = await this.movieModel.count(options)
       const data = await movies.skip(skip).limit(limit).exec()

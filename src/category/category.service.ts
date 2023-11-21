@@ -20,7 +20,6 @@ export class CategoryService {
   async createCategory(createCategoryDto: CreateCategoryDto) {
     try {
       const { name, slug, status, desc } = createCategoryDto
-      console.log(createCategoryDto)
 
       if (!status) {
         createCategoryDto.status = statusCategory.public
@@ -93,19 +92,23 @@ export class CategoryService {
     }
   }
 
-  async getAllCategory(req: Request) {
+  async getAllCategory(
+    keySearch?: string,
+    currentPage?: number,
+    itemsPerPage?: number,
+  ) {
     try {
       let options = {}
 
-      if (req.query.s) {
-        options = { name: new RegExp(req.query.s.toString(), 'i') }
+      if (keySearch) {
+        options = { name: new RegExp(keySearch.toString(), 'i') }
       }
 
       const categories = this.categoryModel.find(options)
 
-      const page: number = parseInt(req.query.page as any) || 1
-      const limit = parseInt(req.query.limit as any) || 100
-      const skip = (page - 1) * limit
+      const page: number = currentPage || 1
+      const limit: number = itemsPerPage || 100
+      const skip: number = (page - 1) * limit
 
       const totalCategories = await this.categoryModel.count(options)
       const data = await categories.skip(skip).limit(limit).exec()

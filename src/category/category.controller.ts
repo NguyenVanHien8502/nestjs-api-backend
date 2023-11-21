@@ -37,7 +37,15 @@ export class CategoryController {
   @Get()
   @UseGuards(UserGuard)
   async getAllCategory(@Req() req: Request) {
-    return await this.categoryService.getAllCategory(req)
+    const keySearch: string = req.query?.s?.toString()
+    const currentPage: number = req.query.page as any
+    const itemsPerPage: number = req.query.limit as any
+
+    return await this.categoryService.getAllCategory(
+      keySearch,
+      currentPage,
+      itemsPerPage,
+    )
   }
 
   @Put(':id')
