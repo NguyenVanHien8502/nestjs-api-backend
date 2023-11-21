@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { Movie } from './movie.schema'
@@ -7,6 +12,7 @@ import { UpdateMovieDto } from './dto/update-movie.dto'
 import { Category } from '../category/category.schema'
 import slugify from 'slugify'
 import { Request } from 'express'
+import { statusMovie } from '../utils/variableGlobal'
 
 @Injectable()
 export class MovieService {
@@ -17,31 +23,21 @@ export class MovieService {
 
   async createMovie(createMovieDto: CreateMovieDto, currentUserId: string) {
     try {
-      const { name, slug, category, link, status, desc } = createMovieDto
+      const { name, slug, categories, link, status, desc } = createMovieDto
 
-      if (!name) {
-        return {
-          msg: 'The field "Name" must be filled in',
-          status: false,
-        }
-      }
+      const alreadyCategory = await this.categoryModel.findOne({
+        name: categories,
+      })
 
-      if (!category) {
+      if (!alreadyCategory) {
         return {
-          msg: 'The field "Category" must be filled in',
-          status: false,
-        }
-      }
-
-      if (!link) {
-        return {
-          msg: 'The field "Link" must be filled in',
+          msg: 'Not exist this category, please pick again',
           status: false,
         }
       }
 
       if (!status) {
-        createMovieDto.status = 'pending'
+        createMovieDto.status = statusMovie.pending
       }
 
       if (!slug) {
@@ -69,32 +65,12 @@ export class MovieService {
       }
 
       if (
-        createMovieDto.status !== 'pending' &&
-        createMovieDto.status !== 'processing' &&
-        createMovieDto.status !== 'active'
+        createMovieDto.status !== statusMovie.pending &&
+        createMovieDto.status !== statusMovie.processing &&
+        createMovieDto.status !== statusMovie.active
       ) {
         return {
-          msg: "Value of status must be 'pending' or 'processing' or 'active'",
-          status: false,
-        }
-      }
-
-      //check validate link url
-      const isValidUrl = (urlString: string) => {
-        const urlPattern = new RegExp(
-          '^(https?:\\/\\/)?' + // validate protocol
-            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // validate domain name
-            '((\\d{1,3}\\.){3}\\d{1,3}))' + // validate OR ip (v4) address
-            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // validate port and path
-            '(\\?[;&a-z\\d%_.~+=-]*)?' + // validate query string
-            '(\\#[-a-z\\d_]*)?$',
-          'i',
-        ) // validate fragment locator
-        return !!urlPattern.test(urlString)
-      }
-      if (!isValidUrl(createMovieDto.link)) {
-        return {
-          msg: 'Please fill in the correct url link format',
+          msg: `Value of status must be ${statusMovie.pending} or ${statusMovie.processing} or ${statusMovie.active}`,
           status: false,
         }
       }
@@ -102,7 +78,7 @@ export class MovieService {
       const newMovie = await this.movieModel.create({
         name: name,
         slug: createMovieDto.slug,
-        category: category,
+        categories: categories,
         link: link,
         status: status ? status : 'pending',
         desc: desc,
@@ -115,7 +91,7 @@ export class MovieService {
         newMovie: newMovie,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -130,7 +106,7 @@ export class MovieService {
       }
       return findMovie
     } catch (error) {
-      throw new Error(error)
+      throw new NotFoundException(error)
     }
   }
 
@@ -163,10 +139,9 @@ export class MovieService {
         totalMovies,
         page,
         limit,
-        total_page: Math.ceil(totalMovies / limit),
       }
     } catch (error) {
-      throw new Error(error)
+      throw new NotFoundException(error)
     }
   }
 
@@ -176,7 +151,7 @@ export class MovieService {
     currentUserId: string,
   ) {
     try {
-      const { name, slug, category, link, status, desc } = updateMovieDto
+      const { name, slug, categories, link, status, desc } = updateMovieDto
       const findMovie = await this.movieModel.findById(id)
       if (!findMovie) {
         return {
@@ -191,89 +166,45 @@ export class MovieService {
         }
       }
 
-      if (!name) {
+      const alreadyCategory = await this.categoryModel.findOne({
+        name: categories,
+      })
+      if (!alreadyCategory) {
         return {
-          msg: 'The field "Name" must be filled in',
-          status: false,
+          msg: 'Not exist this category, please pick again',
+          status: 'false',
         }
       }
 
-      if (!category) {
+      const alreadySlugMovie = await this.movieModel.findOne({
+        slug: slugify(slug),
+      })
+      if (alreadySlugMovie._id.toString() !== id) {
         return {
-          msg: 'The field "Category" must be filled in',
+          msg: 'This slug already exists',
           status: false,
         }
       }
-
-      if (!link) {
-        return {
-          msg: 'The field "Link" must be filled in',
-          status: false,
-        }
-      }
-
-      if (!status) {
-        return {
-          msg: 'The field "Status" must be filled in',
-          status: false,
-        }
-      }
-
-      if (!slug) {
-        return {
-          msg: 'The field "Slug" must be filled in',
-          status: false,
-        }
-      } else {
-        const alreadySlugMovie = await this.movieModel.findOne({
-          slug: slugify(slug),
-        })
-        if (alreadySlugMovie._id.toString() !== id) {
-          return {
-            msg: 'This slug already exists',
-            status: false,
-          }
-        }
-        updateMovieDto.slug = slugify(slug)
-      }
+      updateMovieDto.slug = slugify(slug)
 
       //check value status
       if (
-        updateMovieDto.status !== 'pending' &&
-        updateMovieDto.status !== 'processing' &&
-        updateMovieDto.status !== 'active'
+        updateMovieDto.status !== statusMovie.pending &&
+        updateMovieDto.status !== statusMovie.processing &&
+        updateMovieDto.status !== statusMovie.active
       ) {
         return {
-          msg: "Value of status must be 'pending' or 'processing' or 'active'",
+          msg: `Value of status must be ${statusMovie.pending} or ${statusMovie.processing} or ${statusMovie.active}`,
           status: false,
         }
       }
 
-      //check validate link url
-      const isValidUrl = (urlString: string) => {
-        const urlPattern = new RegExp(
-          '^(https?:\\/\\/)?' + // validate protocol
-            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // validate domain name
-            '((\\d{1,3}\\.){3}\\d{1,3}))' + // validate OR ip (v4) address
-            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // validate port and path
-            '(\\?[;&a-z\\d%_.~+=-]*)?' + // validate query string
-            '(\\#[-a-z\\d_]*)?$',
-          'i',
-        )
-        return !!urlPattern.test(urlString)
-      }
-      if (!isValidUrl(updateMovieDto.link)) {
-        return {
-          msg: 'Please fill in the correct url link format',
-          status: false,
-        }
-      }
       const updatedMovie = await this.movieModel.findByIdAndUpdate(
         id,
         {
           name: name,
           slug: updateMovieDto.slug,
-          category: category,
+          categories: categories,
           link: link,
           status: status,
           desc: desc,
@@ -288,7 +219,7 @@ export class MovieService {
         updatedMovie: updatedMovie,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -311,7 +242,7 @@ export class MovieService {
         deletedMovie: deletedMovie,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -336,7 +267,7 @@ export class MovieService {
         deletedManyMovie: deletedManyMovie,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 }

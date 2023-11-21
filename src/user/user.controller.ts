@@ -49,12 +49,8 @@ export class UserController {
     @Body() loginUserDto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    try {
-      const dataUser = await this.userService.loginUser(loginUserDto, res)
-      return dataUser
-    } catch (err) {
-      throw new Error(err)
-    }
+    const dataUser = await this.userService.loginUser(loginUserDto, res)
+    return dataUser
   }
 
   @Post('login/admin')
@@ -63,24 +59,16 @@ export class UserController {
     @Body() loginUserDto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    try {
-      const dataAdmin = await this.userService.loginAdmin(loginUserDto, res)
-      return dataAdmin
-    } catch (err) {
-      throw new Error(err)
-    }
+    const dataAdmin = await this.userService.loginAdmin(loginUserDto, res)
+    return dataAdmin
   }
 
   @Get('refreshToken')
   @UseGuards(UserGuard)
   async handleRefreshToken(@Req() req: Request) {
-    try {
-      const refreshToken = req.cookies.refreshToken
-      const newToken = await this.userService.handleRefreshToken(refreshToken)
-      return newToken
-    } catch (error) {
-      throw new Error(error)
-    }
+    const refreshToken = req.cookies.refreshToken
+    const newToken = await this.userService.handleRefreshToken(refreshToken)
+    return newToken
   }
 
   @Put('change-password')
@@ -89,15 +77,11 @@ export class UserController {
     @Body() changePasswordUserDto: ChangePasswordUserDto,
     @Req() req,
   ) {
-    try {
-      const currentUserId = req.user?._id
-      return await this.userService.changePassword(
-        changePasswordUserDto,
-        currentUserId,
-      )
-    } catch (error) {
-      throw new Error(error)
-    }
+    const currentUserId = req.user?._id
+    return await this.userService.changePassword(
+      changePasswordUserDto,
+      currentUserId,
+    )
   }
 
   @Get('profile')
@@ -136,21 +120,13 @@ export class UserController {
   @Delete(':id')
   @UseGuards(AdminGuard)
   async deleteUser(@Param(ValidateMongodbId) params: any) {
-    try {
-      const result = await this.userService.deleteUser(params.id)
-      return result
-    } catch (error) {
-      throw new Error(error)
-    }
+    const result = await this.userService.deleteUser(params.id)
+    return result
   }
 
   @Delete()
   @UseGuards(AdminGuard)
   async deleteManyUser(@Req() req: Request) {
-    try {
-      return await this.userService.deleteManyUser(req)
-    } catch (error) {
-      throw new Error(error)
-    }
+    return await this.userService.deleteManyUser(req)
   }
 }

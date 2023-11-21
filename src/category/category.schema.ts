@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
+import { statusCategory } from '../utils/variableGlobal'
 
 export type CategoryDocument = HydratedDocument<Category>
 
@@ -11,7 +12,7 @@ export class Category {
   @Prop({ required: true, unique: true })
   slug: string
 
-  @Prop({ enum: ['private', 'public'], required: true })
+  @Prop({ enum: statusCategory, required: true })
   status: string
 
   @Prop()

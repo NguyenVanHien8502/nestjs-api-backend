@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
+import { roleUser, statusUser } from '../utils/variableGlobal'
 
 export type UserDocument = HydratedDocument<User>
 
@@ -18,10 +19,10 @@ export class User {
   @Prop({ required: true })
   password: string
 
-  @Prop({ enum: ['user', 'admin'], required: true })
+  @Prop({ enum: roleUser, required: true })
   role: string
 
-  @Prop({ enum: ['alone', 'married', 'tretrow', 'adult'] })
+  @Prop({ enum: statusUser })
   status: string
 
   @Prop()

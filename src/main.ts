@@ -21,7 +21,7 @@ async function bootstrap() {
   // app.use(cors()) //cho phép mọi request từ bất kỳ origin nào
   app.use(
     cors({
-      origin: 'http://localhost:3000',
+      origin: process.env.ORIGIN_HOST_DEV,
     }),
   )
   await app.init()

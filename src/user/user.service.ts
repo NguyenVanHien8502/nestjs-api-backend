@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
@@ -11,8 +13,8 @@ import { RegisterUserDto } from './dto/register-user.dto'
 import { Request, Response } from 'express'
 import { LoginUserDto } from './dto/login-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
-import validator from 'validator'
 import { ChangePasswordUserDto } from './dto/changePassword-user.dto'
+import { roleUser, statusUser } from '../utils/variableGlobal'
 
 @Injectable()
 export class UserService {
@@ -22,242 +24,181 @@ export class UserService {
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
-    const { email, password, username, role, status, phone } = registerUserDto
-    if (!email) {
-      return {
-        msg: 'The field "Email" must be filled in',
-        status: false,
+    try {
+      const { email, password, username, role, status, phone } = registerUserDto
+      const findUser = await this.userModel.findOne({ email: email })
+      if (findUser) {
+        return {
+          msg: 'This email already exists',
+          status: false,
+        }
       }
-    }
-    if (!password) {
-      return {
-        msg: 'The field "Password" must be filled in',
-        status: false,
+      if (username !== '' && username.length < 2) {
+        return {
+          msg: 'Username should be least 2 characters',
+          status: false,
+        }
       }
-    }
-    if (!username) {
-      return {
-        msg: 'The field "Username" must be filled in',
-        status: false,
+      if (password !== '' && password.length < 4) {
+        return {
+          msg: 'Password should be least 4 characters',
+          status: false,
+        }
       }
-    }
-    if (!role) {
-      return {
-        msg: 'The field "Role" must be filled in',
-        status: false,
+      if (role !== roleUser.user && role !== roleUser.admin) {
+        return {
+          msg: `Value of role must be ${roleUser.user} or ${roleUser.admin}`,
+          status: false,
+        }
       }
-    }
 
-    const isValidEmail = (email: string) => {
-      const re =
-        /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      if (re.test(email)) return true
-      else return false
-    }
-    if (email !== '' && !isValidEmail(email)) {
+      const newUser = await this.userModel.create({
+        username: username,
+        email: email,
+        password: password,
+        phone: phone,
+        role: role,
+        status: status,
+      })
       return {
-        msg: 'Invalid email address',
-        status: false,
+        msg: 'Registered Successfully',
+        status: true,
+        newUser: newUser,
       }
-    }
-    const findUser = await this.userModel.findOne({ email: email })
-    if (findUser) {
-      return {
-        msg: 'This email already exists',
-        status: false,
-      }
-    }
-    if (username !== '' && username.length < 2) {
-      return {
-        msg: 'Username should be least 2 characters',
-        status: false,
-      }
-    }
-    if (password !== '' && password.length < 4) {
-      return {
-        msg: 'Password should be least 4 characters',
-        status: false,
-      }
-    }
-    if (role !== 'user' && role !== 'admin') {
-      return {
-        msg: "Value of role must be 'user' or 'admin'",
-        status: false,
-      }
-    }
-
-    const newUser = await this.userModel.create({
-      username: username,
-      email: email,
-      password: password,
-      phone: phone,
-      role: role,
-      status: status,
-    })
-    return {
-      msg: 'Registered Successfully',
-      status: true,
-      newUser: newUser,
+    } catch (error) {
+      throw new BadRequestException(error)
     }
   }
 
   async loginUser(loginUserDto: LoginUserDto, res: Response): Promise<any> {
-    const { email, password } = loginUserDto
-    if (!email || !password) {
-      return {
-        msg: 'Please complete all information to login',
-        status: false,
+    try {
+      const { email, password } = loginUserDto
+      const user = await this.userModel.findOne({ email: email })
+      if (!user) {
+        return {
+          msg: 'Not exist this email',
+          status: false,
+        }
       }
-    }
-    const isValidEmail = (email: string) => {
-      const re =
-        /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      if (re.test(email)) return true
-      else return false
-    }
-    if (email !== '' && !isValidEmail(email)) {
-      return {
-        msg: 'Invalid email address',
-        status: false,
+      if (user && !(await user.isMatchedPassword(password))) {
+        return {
+          msg: 'Password information is incorrect',
+          status: false,
+        }
       }
-    }
-    const user = await this.userModel.findOne({ email: email })
-    if (!user) {
-      return {
-        msg: 'Not exist this email',
-        status: false,
+
+      const payload = {
+        _id: user._id,
+        role: user.role,
       }
-    }
-    if (user && !(await user.isMatchedPassword(password))) {
-      return {
-        msg: 'Password information is incorrect',
-        status: false,
-      }
-    }
-
-    const payload = {
-      _id: user._id,
-      role: user.role,
-    }
-    const payload1 = {
-      _id: user._id,
-      username: user.username,
-    }
-
-    const refreshToken = await this.jwtService.signAsync(payload1, {
-      expiresIn: '3d',
-    })
-
-    await this.userModel.findByIdAndUpdate(
-      user._id,
-      {
-        refreshToken: refreshToken,
-      },
-      {
-        new: true,
-      },
-    )
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      maxAge: 72 * 60 * 60 * 1000,
-    })
-
-    return {
-      msg: 'Login Successfully',
-      status: true,
-      user: {
+      const payload1 = {
         _id: user._id,
         username: user.username,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        status: user.status,
-        token: await this.jwtService.signAsync(payload),
-      },
+      }
+
+      const refreshToken = await this.jwtService.signAsync(payload1, {
+        expiresIn: '3d',
+      })
+
+      await this.userModel.findByIdAndUpdate(
+        user._id,
+        {
+          refreshToken: refreshToken,
+        },
+        {
+          new: true,
+        },
+      )
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        maxAge: 72 * 60 * 60 * 1000,
+      })
+
+      return {
+        msg: 'Login Successfully',
+        status: true,
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          status: user.status,
+          token: await this.jwtService.signAsync(payload),
+        },
+      }
+    } catch (error) {
+      throw new BadRequestException(error)
     }
   }
 
   async loginAdmin(loginUserDto: LoginUserDto, res: Response): Promise<any> {
-    const { email, password } = loginUserDto
-    if (!email || !password) {
-      return {
-        msg: 'Please complete all information to login',
-        status: false,
+    try {
+      const { email, password } = loginUserDto
+      const user = await this.userModel.findOne({ email: email })
+      if (!user) {
+        return {
+          msg: 'Not exist this email',
+          status: false,
+        }
       }
-    }
-    const isValidEmail = (email: string) => {
-      const re =
-        /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      if (re.test(email)) return true
-      else return false
-    }
-    if (email !== '' && !isValidEmail(email)) {
-      return {
-        msg: 'Invalid email address',
-        status: false,
+
+      if (user && !(await user.isMatchedPassword(password))) {
+        return {
+          msg: 'Password information is incorrect',
+          status: false,
+        }
       }
-    }
-    const user = await this.userModel.findOne({ email: email })
-    if (!user) {
-      return {
-        msg: 'Not exist this email',
-        status: false,
+
+      if (user && user.role !== 'admin') {
+        return {
+          msg: 'You are not an admin',
+          status: false,
+        }
       }
-    }
 
-    if (user && !(await user.isMatchedPassword(password))) {
-      return {
-        msg: 'Password information is incorrect',
-        status: false,
+      const payload = {
+        _id: user._id,
+        role: user.role,
       }
-    }
-
-    if (user && user.role !== 'admin') {
-      return {
-        msg: 'You are not an admin',
-        status: false,
-      }
-    }
-
-    const payload = {
-      _id: user._id,
-      role: user.role,
-    }
-    const payload1 = {
-      _id: user._id,
-      username: user.username,
-    }
-
-    const refreshToken = await this.jwtService.signAsync(payload1, {
-      expiresIn: '3d',
-    })
-
-    await this.userModel.findByIdAndUpdate(
-      user._id,
-      {
-        refreshToken: refreshToken,
-      },
-      {
-        new: true,
-      },
-    )
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      maxAge: 72 * 60 * 60 * 1000,
-    })
-
-    return {
-      msg: 'Login Successfully',
-      status: true,
-      user: {
+      const payload1 = {
         _id: user._id,
         username: user.username,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        status: user.status,
-        token: await this.jwtService.signAsync(payload),
-      },
+      }
+
+      const refreshToken = await this.jwtService.signAsync(payload1, {
+        expiresIn: '3d',
+      })
+
+      await this.userModel.findByIdAndUpdate(
+        user._id,
+        {
+          refreshToken: refreshToken,
+        },
+        {
+          new: true,
+        },
+      )
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        maxAge: 72 * 60 * 60 * 1000,
+      })
+
+      return {
+        msg: 'Login Successfully',
+        status: true,
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          status: user.status,
+          token: await this.jwtService.signAsync(payload),
+        },
+      }
+    } catch (error) {
+      throw new BadRequestException(error)
     }
   }
 
@@ -287,7 +228,7 @@ export class UserService {
         }
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -302,13 +243,6 @@ export class UserService {
       if (!user) {
         return {
           msg: 'Not exists this user',
-          status: false,
-        }
-      }
-
-      if (!currentPassword || !newPassword || !confirmPassword) {
-        return {
-          msg: 'Please complete all information to change your password',
           status: false,
         }
       }
@@ -348,7 +282,7 @@ export class UserService {
         status: true,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -380,10 +314,9 @@ export class UserService {
         totalUsers,
         page,
         limit,
-        total_page: Math.ceil(totalUsers / limit),
       }
     } catch (error) {
-      throw new Error(error)
+      throw new NotFoundException(error)
     }
   }
 
@@ -398,7 +331,7 @@ export class UserService {
       }
       return user
     } catch (error) {
-      throw new Error(error)
+      throw new NotFoundException(error)
     }
   }
 
@@ -414,19 +347,6 @@ export class UserService {
         }
       }
 
-      if (!username) {
-        return {
-          msg: 'The field "Username" must be filled in',
-          status: false,
-        }
-      }
-      if (!role) {
-        return {
-          msg: 'The field "Role" must be filled in',
-          status: false,
-        }
-      }
-
       if (username && username.length < 2) {
         return {
           msg: 'Username should be least 2 characters',
@@ -434,21 +354,10 @@ export class UserService {
         }
       }
 
-      //check valid phone number
-      const validatePhoneNumber = (phoneNumber: string) => {
-        return validator.isMobilePhone(phoneNumber)
-      }
-      if (phone && !validatePhoneNumber(phone)) {
-        return {
-          msg: 'Please enter valid phone number',
-          status: false,
-        }
-      }
-
       //check value role
-      if (role !== 'admin' && role !== 'user') {
+      if (role !== roleUser.user && role !== roleUser.admin) {
         return {
-          msg: "Value of role must be 'admin' or 'user'",
+          msg: `Value of role must be ${roleUser.user} or ${roleUser.admin}`,
           status: false,
         }
       }
@@ -456,13 +365,13 @@ export class UserService {
       //check value status
       if (status) {
         if (
-          status !== 'alone' &&
-          status !== 'adult' &&
-          status !== 'tretrow' &&
-          status !== 'married'
+          status !== statusUser.alone &&
+          status !== statusUser.adult &&
+          status !== statusUser.tretrow &&
+          status !== statusUser.married
         ) {
           return {
-            msg: "Value of status must be 'alone' or 'adult' or 'tretrow' or 'married'",
+            msg: `Value of status must be ${statusUser.alone} or ${statusUser.adult} or ${statusUser.tretrow} or ${statusUser.married}`,
             status: false,
           }
         }
@@ -485,7 +394,7 @@ export class UserService {
         updateUser: updateUser,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -506,7 +415,7 @@ export class UserService {
         }
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -531,7 +440,17 @@ export class UserService {
         deletedManyUser: deletedManyUser,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
+
+  //  function tong(a, b, callback ) {
+  //   console.log('Tong: ' + (a + b));
+  //   return callback(a + b);
+  //   }
+  //   var tinh_tong = tong(3, 5, function (sum) {
+  //     console.log("2");
+  //     return sum+2;
+  //     })
+  //   alert(tinh_tong);
 }

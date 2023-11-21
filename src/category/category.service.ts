@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { Category } from './category.schema'
@@ -6,6 +10,7 @@ import { CreateCategoryDto } from './dto/create-category.dto'
 import { UpdateCategoryDto } from './dto/update-category.dto'
 import slugify from 'slugify'
 import { Request } from 'express'
+import { statusCategory } from '../utils/variableGlobal'
 
 @Injectable()
 export class CategoryService {
@@ -15,15 +20,10 @@ export class CategoryService {
   async createCategory(createCategoryDto: CreateCategoryDto) {
     try {
       const { name, slug, status, desc } = createCategoryDto
-      if (!name) {
-        return {
-          msg: 'The field "Name" must be filled in',
-          status: false,
-        }
-      }
+      console.log(createCategoryDto)
 
       if (!status) {
-        createCategoryDto.status = 'public'
+        createCategoryDto.status = statusCategory.public
       }
 
       if (!slug) {
@@ -52,18 +52,19 @@ export class CategoryService {
 
       //check value status
       if (
-        createCategoryDto.status !== 'public' &&
-        createCategoryDto.status !== 'private'
+        createCategoryDto.status &&
+        createCategoryDto.status !== statusCategory.public &&
+        createCategoryDto.status !== statusCategory.private
       ) {
         return {
-          msg: "Value of status must be 'public' of 'private'",
+          msg: `Value of status must be ${statusCategory.public} or ${statusCategory.private}`,
           status: false,
         }
       }
       const newCategory = await this.categoryModel.create({
         name: name,
         slug: createCategoryDto.slug,
-        status: status ? status : 'public',
+        status: status ? status : statusCategory.public,
         desc: desc,
       })
 
@@ -73,7 +74,7 @@ export class CategoryService {
         newCategory: newCategory,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -88,7 +89,7 @@ export class CategoryService {
       }
       return findCategory
     } catch (error) {
-      throw new Error(error)
+      throw new NotFoundException(error)
     }
   }
 
@@ -115,10 +116,9 @@ export class CategoryService {
         totalCategories,
         page,
         limit,
-        total_page: Math.ceil(totalCategories / limit),
       }
     } catch (error) {
-      throw new Error(error)
+      throw new NotFoundException(error)
     }
   }
 
@@ -132,42 +132,26 @@ export class CategoryService {
           status: false,
         }
       }
-      if (!name) {
-        return {
-          msg: 'The field "Name" must be filled in',
-          status: false,
-        }
-      }
 
-      if (!status) {
+      const alreadySlugCategory = await this.categoryModel.findOne({
+        slug: slugify(slug),
+      })
+      if (alreadySlugCategory && alreadySlugCategory._id.toString() !== id) {
         return {
-          msg: 'The field "Status" must be filled in',
+          msg: 'This slug already exists',
           status: false,
         }
       }
-
-      if (!slug) {
-        return {
-          msg: 'The field "Slug" must be filled in',
-          status: false,
-        }
-      } else {
-        const alreadySlugCategory = await this.categoryModel.findOne({
-          slug: slugify(slug),
-        })
-        if (alreadySlugCategory._id.toString() !== id) {
-          return {
-            msg: 'This slug already exists',
-            status: false,
-          }
-        }
-        updateCategoryDto.slug = slugify(slug)
-      }
+      updateCategoryDto.slug = slugify(slug)
 
       //check value status
-      if (status !== 'public' && status !== 'private') {
+      if (
+        updateCategoryDto.status &&
+        updateCategoryDto.status !== statusCategory.public &&
+        updateCategoryDto.status !== statusCategory.private
+      ) {
         return {
-          msg: "Value of status must be 'public' of 'private'",
+          msg: `Value of status must be ${statusCategory.public} or ${statusCategory.private}`,
           status: false,
         }
       }
@@ -189,7 +173,7 @@ export class CategoryService {
         updatedCategory: updatedCategory,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -209,7 +193,7 @@ export class CategoryService {
         deletedCategory: deletedCategory,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 
@@ -234,7 +218,7 @@ export class CategoryService {
         deletedManyCategory: deletedManyCategory,
       }
     } catch (error) {
-      throw new Error(error)
+      throw new BadRequestException(error)
     }
   }
 }

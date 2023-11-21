@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import * as mongoose from 'mongoose'
 import { HydratedDocument } from 'mongoose'
 import { User } from '../user/user.schema'
+import { statusMovie } from '../utils/variableGlobal'
 
 export type MovieDocument = HydratedDocument<Movie>
 
@@ -14,12 +15,12 @@ export class Movie {
   slug: string
 
   @Prop({ required: true })
-  category: string
+  categories: string
 
   @Prop({ required: true })
   link: string
 
-  @Prop({ enum: ['pending', 'processing', 'active'], default: 'pending' })
+  @Prop({ enum: statusMovie, default: statusMovie.pending })
   status: string
 
   @Prop()
