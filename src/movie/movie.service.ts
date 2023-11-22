@@ -25,14 +25,16 @@ export class MovieService {
     try {
       const { name, slug, categories, link, status, desc } = createMovieDto
 
-      const alreadyCategory = await this.categoryModel.findOne({
-        name: categories,
-      })
+      for (const category of categories) {
+        const alreadyCategory = await this.categoryModel.findOne({
+          name: category,
+        })
 
-      if (!alreadyCategory) {
-        return {
-          msg: 'Not exist this category, please pick again',
-          status: false,
+        if (!alreadyCategory) {
+          return {
+            msg: 'Not exist this category, please pick again',
+            status: false,
+          }
         }
       }
 
@@ -156,6 +158,7 @@ export class MovieService {
   ) {
     try {
       const { name, slug, categories, link, status, desc } = updateMovieDto
+
       const findMovie = await this.movieModel.findById(id)
       if (!findMovie) {
         return {
@@ -170,20 +173,22 @@ export class MovieService {
         }
       }
 
-      const alreadyCategory = await this.categoryModel.findOne({
-        name: categories,
-      })
-      if (!alreadyCategory) {
-        return {
-          msg: 'Not exist this category, please pick again',
-          status: 'false',
+      for (const category of categories) {
+        const alreadyCategory = await this.categoryModel.findOne({
+          name: category,
+        })
+        if (!alreadyCategory) {
+          return {
+            msg: 'Not exist this category, please pick again',
+            status: 'false',
+          }
         }
       }
 
       const alreadySlugMovie = await this.movieModel.findOne({
         slug: slugify(slug),
       })
-      if (alreadySlugMovie._id.toString() !== id) {
+      if (alreadySlugMovie && alreadySlugMovie._id.toString() !== id) {
         return {
           msg: 'This slug already exists',
           status: false,
@@ -193,6 +198,7 @@ export class MovieService {
 
       //check value status
       if (
+        updateMovieDto.status &&
         updateMovieDto.status !== statusMovie.pending &&
         updateMovieDto.status !== statusMovie.processing &&
         updateMovieDto.status !== statusMovie.active
@@ -217,6 +223,7 @@ export class MovieService {
           new: true,
         },
       )
+
       return {
         msg: 'Updated movie successfully',
         status: true,

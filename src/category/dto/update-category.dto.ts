@@ -1,15 +1,15 @@
 import { IsNotEmpty, IsString } from 'class-validator'
 
 export class UpdateCategoryDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Name cannot be empty' })
   @IsString()
   name: string
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Slug cannot be empty' })
   @IsString()
   slug: string
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Status cannot be empty' })
   @IsString()
   status: string
 

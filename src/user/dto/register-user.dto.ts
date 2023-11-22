@@ -7,19 +7,19 @@ import {
 } from 'class-validator'
 
 export class RegisterUserDto {
-  @IsNotEmpty({ message: 'Cannot be empty' })
+  @IsNotEmpty({ message: 'Username cannot be empty' })
   @IsString()
   username: string
 
-  @IsNotEmpty({ message: 'Cannot be empty' })
+  @IsNotEmpty({ message: 'Email cannot be empty' })
   @IsEmail()
   email: string
 
-  @IsNotEmpty({ message: 'Cannot be empty' })
+  @IsNotEmpty({ message: 'Password cannot be empty' })
   @IsString()
   password: string
 
-  @IsNotEmpty({ message: 'Cannot be empty' })
+  @IsNotEmpty({ message: 'Please pick your role' })
   @IsString()
   role: string
 

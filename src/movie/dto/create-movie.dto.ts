@@ -1,18 +1,18 @@
 import { IsNotEmpty, IsString, IsUrl } from 'class-validator'
 
 export class CreateMovieDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Name cannot be empty' })
   @IsString()
   name: string
 
   @IsString()
   slug: string
 
-  @IsNotEmpty()
-  @IsString()
-  categories: string
+  @IsNotEmpty({ message: 'Category cannot be empty' })
+  // @IsString()
+  categories: string[]
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Link movie cannot be empty' })
   @IsString()
   @IsUrl()
   link: string

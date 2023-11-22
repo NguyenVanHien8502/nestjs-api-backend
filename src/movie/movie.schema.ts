@@ -15,7 +15,7 @@ export class Movie {
   slug: string
 
   @Prop({ required: true })
-  categories: string
+  categories: string[]
 
   @Prop({ required: true })
   link: string
