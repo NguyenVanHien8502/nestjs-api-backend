@@ -426,7 +426,7 @@ export class UserService {
   async deleteManyUser(req: Request) {
     try {
       const { userIds } = req.body
-      userIds?.forEach(async (userId) => {
+      userIds?.forEach(async (userId: string) => {
         const findUser = await this.userModel.findById(userId)
         if (!findUser) {
           return {
@@ -447,14 +447,4 @@ export class UserService {
       throw new BadRequestException(error)
     }
   }
-
-  //  function tong(a, b, callback ) {
-  //   console.log('Tong: ' + (a + b));
-  //   return callback(a + b);
-  //   }
-  //   var tinh_tong = tong(3, 5, function (sum) {
-  //     console.log("2");
-  //     return sum+2;
-  //     })
-  //   alert(tinh_tong);
 }

@@ -260,7 +260,7 @@ export class MovieService {
   async deleteManyMovie(req: Request) {
     try {
       const { movieIds } = req.body
-      movieIds?.forEach(async (movieId) => {
+      movieIds?.forEach(async (movieId: string) => {
         const findMovie = await this.movieModel.findById(movieId)
         if (!findMovie) {
           return {
